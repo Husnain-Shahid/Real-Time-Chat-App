@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/cloudinary_service.dart';
 import '../services/image_picker_service.dart';
+import 'crop_image_screen.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -48,11 +49,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.userData['name'] ?? '');
-    _aboutController = TextEditingController(text: widget.userData['about'] ?? widget.userData['bio'] ?? 'Hey there! I am using WhatsApp.');
+    _aboutController = TextEditingController(
+      text: widget.userData['about'] ?? widget.userData['bio'] ?? 'Hey there! I am using WhatsApp.',
+    );
     _phoneController = TextEditingController(text: widget.userData['phoneNumber'] ?? '+92 340 3912622');
     _profileImage = widget.userData['profileImage'] ?? '';
     _uniqueId = widget.userData['uniqueId'] ?? '';
-    _email = widget.userData['email'] ?? '';
+    _email = widget.userData['email'] ?? FirebaseAuth.instance.currentUser?.email ?? '';
   }
 
   @override
@@ -64,11 +67,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickAndUploadPhoto(bool fromCamera) async {
-    final File? file = fromCamera
+    final File? pickedFile = fromCamera
         ? await _pickerService.pickFromCamera()
         : await _pickerService.pickFromGallery();
 
-    if (file == null) return;
+    if (pickedFile == null) return;
+
+    if (!mounted) return;
+
+    // Open CropImageScreen so user can zoom, rotate, crop before upload
+    final File? croppedFile = await Navigator.push<File?>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CropImageScreen(imageFile: pickedFile),
+      ),
+    );
+
+    if (croppedFile == null) return;
 
     setState(() {
       _isUploadingPhoto = true;
@@ -77,7 +92,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     try {
       final uploadRes = await _cloudinaryService.uploadImage(
-        image: file,
+        image: croppedFile,
         onProgress: (p) {
           if (mounted) setState(() => _uploadProgress = p);
         },

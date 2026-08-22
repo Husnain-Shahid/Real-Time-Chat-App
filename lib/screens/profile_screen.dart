@@ -12,13 +12,16 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveClientMixin {
   final currentUser = FirebaseAuth.instance.currentUser;
   bool _readReceipts = true;
   bool _conversationTones = true;
   bool _highPriorityNotifications = true;
   String _selectedTheme = 'System default';
   String _selectedLanguage = 'English (device\'s language)';
+
+  @override
+  bool get wantKeepAlive => true;
 
   void _showQrCodeModal(Map<String, dynamic> userData) {
     final String name = userData['name'] ?? 'User';
@@ -606,6 +609,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     if (currentUser == null) {
       return const Scaffold(body: Center(child: Text('No user logged in')));
     }

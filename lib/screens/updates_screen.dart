@@ -17,9 +17,12 @@ class UpdatesScreen extends StatefulWidget {
   State<UpdatesScreen> createState() => _UpdatesScreenState();
 }
 
-class _UpdatesScreenState extends State<UpdatesScreen> {
+class _UpdatesScreenState extends State<UpdatesScreen> with AutomaticKeepAliveClientMixin {
   final ImagePickerService _imagePickerService = ImagePickerService();
   bool _isViewedExpanded = true;
+
+  @override
+  bool get wantKeepAlive => true;
 
   void _showMediaPickerOptions(BuildContext context) {
     showModalBottomSheet(
@@ -151,6 +154,7 @@ class _UpdatesScreenState extends State<UpdatesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final homeProvider = Provider.of<HomeProvider>(context);
     final statusProvider = Provider.of<StatusProvider>(context);
     final currentUser = FirebaseAuth.instance.currentUser;

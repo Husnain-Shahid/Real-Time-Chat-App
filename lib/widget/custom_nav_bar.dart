@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../provider/home_provider.dart';
@@ -17,6 +19,7 @@ class CustomBottomNavBar extends StatelessWidget {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     final homeProvider = Provider.of<HomeProvider>(context);
     final unreadChats = homeProvider.totalUnreadChatsCount;
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
     return Container(
       padding: EdgeInsets.fromLTRB(12, 8, 12, bottomPadding > 0 ? bottomPadding + 4 : 12),
@@ -67,7 +70,7 @@ class CustomBottomNavBar extends StatelessWidget {
             context,
             index: 4,
             label: 'You',
-            avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb',
+            userId: currentUserId,
           ),
         ],
       ),
@@ -147,7 +150,7 @@ class CustomBottomNavBar extends StatelessWidget {
     BuildContext context, {
     required int index,
     required String label,
-    required String avatarUrl,
+    required String? userId,
   }) {
     final isSelected = currentIndex == index;
 
@@ -164,10 +167,40 @@ class CustomBottomNavBar extends StatelessWidget {
               color: isSelected ? const Color(0xFFD8F3DC) : Colors.transparent,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: CircleAvatar(
-              radius: 13,
-              backgroundImage: NetworkImage(avatarUrl),
-            ),
+            child: userId == null
+                ? const CircleAvatar(
+                    radius: 13,
+                    backgroundColor: Color(0xFFC7E8FA),
+                    child: Icon(Icons.person, size: 16, color: Color(0xFF008069)),
+                  )
+                : StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance.collection('users').doc(userId).snapshots(),
+                    builder: (context, snapshot) {
+                      String profileImage = '';
+                      if (snapshot.hasData && snapshot.data!.exists) {
+                        final data = snapshot.data!.data() as Map<String, dynamic>?;
+                        profileImage = data?['profileImage'] ?? '';
+                      }
+                      if (profileImage.isEmpty) {
+                        profileImage = FirebaseAuth.instance.currentUser?.photoURL ?? '';
+                      }
+
+                      if (profileImage.isNotEmpty) {
+                        return CircleAvatar(
+                          radius: 13,
+                          backgroundColor: const Color(0xFFC7E8FA),
+                          backgroundImage: NetworkImage(profileImage),
+                          onBackgroundImageError: (_, _) {},
+                        );
+                      }
+
+                      return const CircleAvatar(
+                        radius: 13,
+                        backgroundColor: Color(0xFFC7E8FA),
+                        child: Icon(Icons.person, size: 16, color: Color(0xFF008069)),
+                      );
+                    },
+                  ),
           ),
           const SizedBox(height: 4),
           Text(

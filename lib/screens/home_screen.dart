@@ -22,8 +22,15 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class _HomeScreenContent extends StatelessWidget {
+class _HomeScreenContent extends StatefulWidget {
   const _HomeScreenContent();
+
+  @override
+  State<_HomeScreenContent> createState() => _HomeScreenContentState();
+}
+
+class _HomeScreenContentState extends State<_HomeScreenContent> {
+  late PageController _pageController;
 
   static const List<Widget> _screens = [
     ChatHomeView(),
@@ -34,17 +41,62 @@ class _HomeScreenContent extends StatelessWidget {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    final initialIndex = Provider.of<HomeProvider>(context, listen: false).currentIndex;
+    _pageController = PageController(initialPage: initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onPageChanged(int index) {
+    final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+    if (homeProvider.currentIndex != index) {
+      homeProvider.setBottomNavIndex(index);
+    }
+  }
+
+  void _onBottomNavTapped(int index) {
+    final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+    homeProvider.setBottomNavIndex(index);
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final homeProvider = Provider.of<HomeProvider>(context);
 
+    // Keep page controller synced in case provider changed index from outside
+    if (_pageController.hasClients && _pageController.page?.round() != homeProvider.currentIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_pageController.hasClients && _pageController.page?.round() != homeProvider.currentIndex) {
+          _pageController.animateToPage(
+            homeProvider.currentIndex,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
+    }
+
     return Scaffold(
-      body: IndexedStack(
-        index: homeProvider.currentIndex,
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: _onPageChanged,
+        physics: const ClampingScrollPhysics(),
         children: _screens,
       ),
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: homeProvider.currentIndex,
-        onTap: (index) => homeProvider.setBottomNavIndex(index),
+        onTap: _onBottomNavTapped,
       ),
     );
   }
@@ -57,9 +109,12 @@ class ChatHomeView extends StatefulWidget {
   State<ChatHomeView> createState() => _ChatHomeViewState();
 }
 
-class _ChatHomeViewState extends State<ChatHomeView> {
+class _ChatHomeViewState extends State<ChatHomeView> with AutomaticKeepAliveClientMixin {
   final TextEditingController _searchController = TextEditingController();
   final DatabaseService _databaseService = DatabaseService();
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void dispose() {
@@ -96,6 +151,7 @@ class _ChatHomeViewState extends State<ChatHomeView> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final homeProvider = Provider.of<HomeProvider>(context);
     final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
     final unreadChatsCount = homeProvider.totalUnreadChatsCount;
@@ -291,35 +347,9 @@ class _ChatHomeViewState extends State<ChatHomeView> {
               ],
             ),
           ),
+          const SizedBox(height: 8),
 
-          // Archived Row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 2.0),
-            child: InkWell(
-              onTap: () {},
-              borderRadius: BorderRadius.circular(8),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-                child: Row(
-                  children: [
-                    Icon(Icons.archive_outlined, color: Colors.grey, size: 20),
-                    SizedBox(width: 24),
-                    Text(
-                      'Archived',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87),
-                    ),
-                    Spacer(),
-                    Text(
-                      '4',
-                      style: TextStyle(color: Color(0xFF25D366), fontWeight: FontWeight.bold, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          const Divider(height: 1, color: Color(0xFFF0F2F5)),
+          // const Divider(height: 1, color: Color(0xFFF0F2F5)),
 
           // Chat List View
           Expanded(
@@ -448,26 +478,26 @@ class _ChatHomeViewState extends State<ChatHomeView> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 // Meta AI Floating Action Icon
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0F2F5),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    padding: EdgeInsets.zero,
-                    icon: const Icon(Icons.auto_awesome, color: Colors.purple, size: 22),
-                    onPressed: () {},
-                  ),
-                ),
+                // Container(
+                //   width: 44,
+                //   height: 44,
+                //   decoration: BoxDecoration(
+                //     color: const Color(0xFFF0F2F5),
+                //     borderRadius: BorderRadius.circular(12),
+                //     boxShadow: [
+                //       BoxShadow(
+                //         color: Colors.black.withValues(alpha: 0.08),
+                //         blurRadius: 4,
+                //         offset: const Offset(0, 2),
+                //       ),
+                //     ],
+                //   ),
+                //   child: IconButton(
+                //     padding: EdgeInsets.zero,
+                //     icon: const Icon(Icons.auto_awesome, color: Colors.purple, size: 22),
+                //     onPressed: () {},
+                //   ),
+                // ),
                 const SizedBox(height: 12),
                 // New Message FAB
                 FloatingActionButton(

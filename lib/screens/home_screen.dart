@@ -1,52 +1,55 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../models/chat_model.dart';
+import '../provider/home_provider.dart';
+import '../widget/custom_nav_bar.dart';
+import '../services/database_service.dart';
 import 'chat_screen.dart';
 import 'updates_screen.dart';
-import '../widget/custom_nav_bar.dart'; // Import your professional nav bar widget
-import 'calls_screen.dart'; // <--- Import your newly created calls screen
+import 'calls_screen.dart';
 import 'profile_screen.dart';
-class HomeScreen extends StatefulWidget {
+import 'select_contact_screen.dart';
+
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  Widget build(BuildContext context) {
+    return const _HomeScreenContent();
+  }
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
+class _HomeScreenContent extends StatelessWidget {
+  const _HomeScreenContent();
 
-  // List of screens corresponding to each bottom navigation tab
-  late final List<Widget> _screens = [
-    const ChatHomeView(),
-    const UpdatesScreen(),
-    const PlaceholderScreen(title: 'Communities'),
-    const CallsScreen(),
-    const ProfileScreen(),
+  static const List<Widget> _screens = [
+    ChatHomeView(),
+    UpdatesScreen(),
+    PlaceholderScreen(title: 'Communities'),
+    CallsScreen(),
+    ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final homeProvider = Provider.of<HomeProvider>(context);
+
     return Scaffold(
-      // IndexedStack preserves the state of each tab when switching back and forth
       body: IndexedStack(
-        index: _currentIndex,
+        index: homeProvider.currentIndex,
         children: _screens,
       ),
       bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        currentIndex: homeProvider.currentIndex,
+        onTap: (index) => homeProvider.setBottomNavIndex(index),
       ),
     );
   }
 }
 
-// -----------------------------------------------------------------
-// Chat Home View (Your primary WhatsApp chat list interface)
-// -----------------------------------------------------------------
 class ChatHomeView extends StatefulWidget {
   const ChatHomeView({super.key});
 
@@ -55,277 +58,731 @@ class ChatHomeView extends StatefulWidget {
 }
 
 class _ChatHomeViewState extends State<ChatHomeView> {
-  String _selectedFilter = 'All';
+  final TextEditingController _searchController = TextEditingController();
+  final DatabaseService _databaseService = DatabaseService();
 
-  final List<ChatModel> _chats = [
-    ChatModel(
-      name: 'İlkyazım ♡ (You)',
-      lastMessage: 'https://www.instagram.com/re...',
-      time: 'Yesterday',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb',
-      isPinned: true,
-    ),
-    ChatModel(
-      name: 'Ahsan Iqbal',
-      lastMessage: '5th Semester.zip',
-      time: '8:37 AM',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
-      isUnread: true,
-    ),
-    ChatModel(
-      name: 'Ahmad Hassan',
-      lastMessage: 'Ahmad Hassan reacted 👍 to "Suba kr l..."',
-      time: 'Yesterday',
-      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
-    ),
-    ChatModel(
-      name: 'Abdullah Khan',
-      lastMessage: 'Voice call',
-      time: 'Yesterday',
-      avatarUrl: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce',
-    ),
-    ChatModel(
-      name: 'SP24-BSE-A',
-      lastMessage: "Class Discussion  ‣  insha'Allah",
-      time: 'Yesterday',
-      avatarUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
-      isGroup: true,
-    ),
-    ChatModel(
-      name: 'Abdullah Javed',
-      lastMessage: 'Okk',
-      time: 'Yesterday',
-      avatarUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61',
-    ),
-    ChatModel(
-      name: 'Shehzad Ali',
-      lastMessage: 'Sir i have shared my Week 6 Internship...',
-      time: 'Yesterday',
-      avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7',
-      isUnread: true,
-    ),
-  ];
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  String _formatChatTime(dynamic rawTimestamp, String fallbackTime) {
+    if (rawTimestamp == null) return fallbackTime;
+
+    final DateTime dateTime;
+    if (rawTimestamp is Timestamp) {
+      dateTime = rawTimestamp.toDate();
+    } else if (rawTimestamp is DateTime) {
+      dateTime = rawTimestamp;
+    } else {
+      return fallbackTime;
+    }
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final messageDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
+
+    if (messageDate == today) {
+      return DateFormat('h:mm a').format(dateTime);
+    } else if (today.difference(messageDate).inDays == 1) {
+      return 'Yesterday';
+    } else if (today.difference(messageDate).inDays < 7) {
+      return DateFormat('EEEE').format(dateTime); // e.g. Monday
+    } else {
+      return DateFormat('dd/MM/yy').format(dateTime); // e.g. 21/08/26
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final homeProvider = Provider.of<HomeProvider>(context);
+    final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final unreadChatsCount = homeProvider.totalUnreadChatsCount;
+
+    final isSelecting = homeProvider.isSelectingChat;
+
+    // Find selected chat details if selecting
+    String selectedReceiverId = '';
+    String selectedDisplayName = '';
+    bool selectedIsFav = false;
+    if (isSelecting) {
+      final selectedDoc = homeProvider.chatDocs.firstWhere(
+        (doc) => doc.id == homeProvider.selectedChatRoomId,
+        orElse: () => homeProvider.chatDocs.first,
+      );
+      final data = selectedDoc.data() as Map<String, dynamic>;
+      final users = data['users'] as List? ?? [];
+      selectedReceiverId = users.firstWhere(
+        (id) => id != currentUserId,
+        orElse: () => (users.isNotEmpty ? users.first : ''),
+      );
+      final receiver = homeProvider.userCache[selectedReceiverId];
+      selectedDisplayName = receiver?.name ?? 'Chat';
+      final favoritesList = data['favorites'] as List? ?? [];
+      selectedIsFav = favoritesList.contains(currentUserId) || data['favorite_$currentUserId'] == true;
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'WhatsApp',
-          style: TextStyle(
-            color: Color(0xFF075E54),
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.camera_alt_outlined, color: Colors.black87),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.black87),
-            onPressed: () {},
-          ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.black87),
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'new_group', child: Text('New group')),
-              const PopupMenuItem(value: 'settings', child: Text('Settings')),
-            ],
-          ),
-        ],
-      ),
+      appBar: isSelecting
+          ? AppBar(
+              backgroundColor: Colors.white,
+              elevation: 1,
+              leading: IconButton(
+                icon: const Icon(Icons.close, color: Colors.black87),
+                onPressed: () => homeProvider.clearChatSelection(),
+              ),
+              title: const Text(
+                '1',
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 19,
+                ),
+              ),
+              actions: [
+                IconButton(
+                  tooltip: selectedIsFav ? 'Unfavorite' : 'Favorite',
+                  icon: Icon(
+                    selectedIsFav ? Icons.star : Icons.star_border,
+                    color: selectedIsFav ? Colors.amber[700] : Colors.black87,
+                  ),
+                  onPressed: () => homeProvider.toggleFavoriteSelectedChat(
+                    selectedReceiverId,
+                    selectedIsFav,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Clear Chat',
+                  icon: const Icon(Icons.cleaning_services_outlined, color: Colors.black87),
+                  onPressed: () => _showClearChatDialog(
+                    context,
+                    homeProvider,
+                    selectedReceiverId,
+                    selectedDisplayName,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Delete Chat',
+                  icon: const Icon(Icons.delete_outline, color: Color(0xFFEA0038)),
+                  onPressed: () => _showDeleteChatDialog(
+                    context,
+                    homeProvider,
+                    selectedReceiverId,
+                    selectedDisplayName,
+                  ),
+                ),
+              ],
+            )
+          : AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              title: const Text(
+                'WhatsApp',
+                style: TextStyle(
+                  color: Color(0xFF25D366),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.camera_alt_outlined, color: Colors.black87),
+                  onPressed: () {},
+                ),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, color: Colors.black87),
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(value: 'new_group', child: Text('New group')),
+                    const PopupMenuItem(value: 'new_broadcast', child: Text('New broadcast')),
+                    const PopupMenuItem(value: 'linked_devices', child: Text('Linked devices')),
+                    const PopupMenuItem(value: 'starred', child: Text('Starred messages')),
+                    const PopupMenuItem(value: 'settings', child: Text('Settings')),
+                  ],
+                ),
+              ],
+            ),
       body: Column(
         children: [
-          // Search/Meta AI Bar
+          // Search Bar (Ask Meta AI or Search)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              height: 44,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
                 color: const Color(0xFFF0F2F5),
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(24),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.search, color: Colors.grey),
-                  SizedBox(width: 12),
-                  Text(
-                    'Ask Meta AI or Search',
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                  const Icon(Icons.search, color: Colors.grey, size: 22),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (val) => homeProvider.setSearchQuery(val),
+                      decoration: const InputDecoration(
+                        hintText: 'Ask Meta AI or Search',
+                        hintStyle: TextStyle(color: Colors.grey, fontSize: 15.5),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
                   ),
+                  if (_searchController.text.isNotEmpty)
+                    GestureDetector(
+                      onTap: () {
+                        _searchController.clear();
+                        homeProvider.setSearchQuery('');
+                      },
+                      child: const Icon(Icons.close, color: Colors.grey, size: 18),
+                    ),
                 ],
               ),
             ),
           ),
 
-          // Filter Chips
+          // Filter Chips (All, Unread, Favorites, Groups)
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             child: Row(
               children: [
-                _buildFilterChip('All'),
-                _buildFilterChip('Unread'),
-                _buildFilterChip('Favorites'),
-                _buildFilterChip('Groups'),
-                const SizedBox(width: 8),
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: const Color(0xFFF0F2F5),
-                  child: const Icon(Icons.add, size: 18, color: Colors.black54),
+                _buildFilterChip(
+                  context,
+                  label: 'All',
+                  isSelected: homeProvider.selectedFilter == 'All',
+                  onTap: () => homeProvider.setSelectedFilter('All'),
+                ),
+                _buildFilterChip(
+                  context,
+                  label: unreadChatsCount > 0 ? 'Unread $unreadChatsCount' : 'Unread',
+                  isSelected: homeProvider.selectedFilter == 'Unread',
+                  onTap: () => homeProvider.setSelectedFilter('Unread'),
+                ),
+                _buildFilterChip(
+                  context,
+                  label: 'Favorites',
+                  isSelected: homeProvider.selectedFilter == 'Favorites',
+                  onTap: () => homeProvider.setSelectedFilter('Favorites'),
+                ),
+                _buildFilterChip(
+                  context,
+                  label: 'Groups',
+                  isSelected: homeProvider.selectedFilter == 'Groups',
+                  onTap: () => homeProvider.setSelectedFilter('Groups'),
+                ),
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: () {},
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF0F2F5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.add, size: 16, color: Colors.black54),
+                  ),
                 ),
               ],
             ),
           ),
 
+          // Archived Row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 2.0),
+            child: InkWell(
+              onTap: () {},
+              borderRadius: BorderRadius.circular(8),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                child: Row(
+                  children: [
+                    Icon(Icons.archive_outlined, color: Colors.grey, size: 20),
+                    SizedBox(width: 24),
+                    Text(
+                      'Archived',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87),
+                    ),
+                    Spacer(),
+                    Text(
+                      '4',
+                      style: TextStyle(color: Color(0xFF25D366), fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          const Divider(height: 1, color: Color(0xFFF0F2F5)),
+
           // Chat List View
           Expanded(
-            child: ListView(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.archive_outlined, color: Colors.grey),
-                  title: const Text(
-                    'Archived',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  trailing: const Text(
-                    '3',
-                    style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
-                  ),
-                  onTap: () {},
-                ),
-                ..._chats.map((chat) => ListTile(
-                  leading: CircleAvatar(
-                    radius: 26,
-                    backgroundImage: NetworkImage(chat.avatarUrl),
-                  ),
-                  title: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          chat.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Text(
-                        chat.time,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: chat.isUnread ? const Color(0xFF25D366) : Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 4.0),
-                    child: Row(
-                      children: [
-                        if (!chat.isGroup) ...[
-                          const Icon(Icons.done_all, size: 16, color: Colors.blue),
-                          const SizedBox(width: 4),
-                        ],
-                        Expanded(
-                          child: Text(
-                            chat.lastMessage,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: chat.isUnread ? Colors.black87 : Colors.grey[600],
-                              fontWeight: chat.isUnread ? FontWeight.w500 : FontWeight.normal,
-                            ),
+            child: homeProvider.isLoading
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF25D366)))
+                : homeProvider.chatDocs.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.chat_bubble_outline, size: 56, color: Colors.grey[300]),
+                              const SizedBox(height: 12),
+                              Text(
+                                homeProvider.selectedFilter == 'Unread'
+                                    ? 'No unread chats'
+                                    : 'No chats yet',
+                                style: TextStyle(color: Colors.grey[700], fontSize: 16, fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Tap the green button below to start a new chat!',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.grey[500], fontSize: 13.5),
+                              ),
+                            ],
                           ),
                         ),
-                        if (chat.isPinned)
-                          const Padding(
-                            padding: EdgeInsets.only(left: 4.0),
-                            child: Icon(Icons.push_pin, size: 14, color: Colors.grey),
-                          ),
-                      ],
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChatScreen(chat: chat),
+                      )
+                    : ListView.builder(
+                        itemCount: homeProvider.chatDocs.length,
+                        itemBuilder: (context, index) {
+                          final chatRoomDoc = homeProvider.chatDocs[index];
+                          final chatRoomData = chatRoomDoc.data() as Map<String, dynamic>;
+                          final users = chatRoomData['users'] as List? ?? [];
+                          
+                          final bool isGroup = chatRoomData['isGroup'] == true;
+                          
+                          // Determine the contact / group UID
+                          final receiverId = isGroup
+                              ? chatRoomDoc.id
+                              : users.firstWhere(
+                                  (id) => id != currentUserId,
+                                  orElse: () => (users.isNotEmpty ? users.first : ''),
+                                );
+                          
+                          if (receiverId.isEmpty) return const SizedBox.shrink();
+
+                          final int unreadCount = (chatRoomData['unreadCount_$currentUserId'] as num?)?.toInt() ?? 0;
+                          final receiver = isGroup ? null : homeProvider.userCache[receiverId];
+
+                          final isSelfChat = !isGroup && receiverId == currentUserId;
+                          final displayName = isGroup
+                              ? (chatRoomData['groupName'] as String? ?? 'Group')
+                              : (isSelfChat
+                                  ? '${receiver?.name ?? 'Message yourself'} (You)'
+                                  : (receiver?.name.isNotEmpty == true ? receiver!.name : 'Chat'));
+                          final avatarUrl = isGroup
+                              ? (chatRoomData['groupImage'] as String? ?? '')
+                              : (receiver?.profileImage ?? '');
+
+                          final lastMessageText = chatRoomData['lastMessage'] ?? 'Tap to chat';
+                          final dynamic timestamp = chatRoomData['lastMessageTimestamp'];
+                          final timeText = _formatChatTime(timestamp, chatRoomData['lastMessageTime'] ?? '');
+                          final isMe = chatRoomData['lastMessageSenderId'] == currentUserId;
+
+                          final chat = ChatModel(
+                            id: receiverId,
+                            chatRoomId: chatRoomDoc.id,
+                            name: displayName,
+                            lastMessage: lastMessageText,
+                            time: timeText,
+                            avatarUrl: avatarUrl,
+                            isGroup: isGroup,
+                            unreadCount: unreadCount,
+                            isUnread: unreadCount > 0,
+                          );
+
+                          final isSelected = isSelecting && homeProvider.selectedChatRoomId == chatRoomDoc.id;
+                          final int receiverUnread = (chatRoomData['unreadCount_$receiverId'] as num?)?.toInt() ?? 0;
+                          final bool isLastMessageRead = receiverUnread == 0;
+
+                          return _ChatListTile(
+                            chat: chat,
+                            receiverId: receiverId,
+                            isMe: isMe,
+                            unreadCount: unreadCount,
+                            isLastMessageRead: isLastMessageRead,
+                            isSelected: isSelected,
+                            onLongPress: () {
+                              homeProvider.selectChat(chatRoomDoc.id);
+                            },
+                            onTap: () {
+                              if (isSelecting) {
+                                if (isSelected) {
+                                  homeProvider.clearChatSelection();
+                                } else {
+                                  homeProvider.selectChat(chatRoomDoc.id);
+                                }
+                                return;
+                              }
+
+                              _databaseService.markMessagesAsRead(receiverId);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ChatScreen(
+                                    chat: chat,
+                                    receiverId: receiverId,
+                                  ),
+                                ),
+                              ).then((_) {
+                                _databaseService.markMessagesAsRead(receiverId);
+                              });
+                            },
+                          );
+                        },
                       ),
-                    );
-                  },
-                )),
-              ],
-            ),
           ),
         ],
       ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            heroTag: 'edit_btn',
-            mini: true,
-            backgroundColor: const Color(0xFFF0F2F5),
-            elevation: 2,
-            onPressed: () {},
-            child: const Icon(Icons.edit, color: Colors.black87),
+      floatingActionButton: isSelecting
+          ? null
+          : Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // Meta AI Floating Action Icon
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0F2F5),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(Icons.auto_awesome, color: Colors.purple, size: 22),
+                    onPressed: () {},
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // New Message FAB
+                FloatingActionButton(
+                  heroTag: 'new_chat_fab',
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  backgroundColor: const Color(0xFF25D366),
+                  elevation: 4,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SelectContactScreen()),
+                    );
+                  },
+                  child: const Icon(Icons.add_comment, color: Colors.white, size: 24),
+                ),
+              ],
+            ),
+    );
+  }
+
+  void _showDeleteChatDialog(
+    BuildContext context,
+    HomeProvider homeProvider,
+    String receiverId,
+    String displayName,
+  ) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Delete chat with $displayName?'),
+        content: const Text(
+          'Messages, photos, videos, and audio in this chat will be permanently deleted from servers and cannot be recovered.',
+          style: TextStyle(fontSize: 14, color: Colors.black87),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.black87)),
           ),
-          const SizedBox(height: 12),
-          FloatingActionButton(
-            heroTag: 'chat_btn',
-            backgroundColor: const Color(0xFF25D366),
-            child: const Icon(Icons.chat, color: Colors.white),
-            onPressed: () {},
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await homeProvider.deleteSelectedChat(receiverId);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Chat with $displayName deleted')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Failed to delete chat. Please try again.')),
+                  );
+                }
+              }
+            },
+            child: const Text(
+              'Delete chat',
+              style: TextStyle(color: Color(0xFFEA0038), fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterChip(String label) {
-    final isSelected = _selectedFilter == label;
+  void _showClearChatDialog(
+    BuildContext context,
+    HomeProvider homeProvider,
+    String receiverId,
+    String displayName,
+  ) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Clear chat with $displayName?'),
+        content: const Text(
+          'All messages, photos, videos, and media in this chat will be deleted. The conversation entry will remain on your Home screen.',
+          style: TextStyle(fontSize: 14, color: Colors.black87),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.black87)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await homeProvider.clearSelectedChat(receiverId);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Chat with $displayName cleared')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Failed to clear chat. Please try again.')),
+                  );
+                }
+              }
+            },
+            child: const Text(
+              'Clear chat',
+              style: TextStyle(color: Color(0xFFEA0038), fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(
+    BuildContext context, {
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: isSelected,
-        onSelected: (selected) {
-          setState(() {
-            _selectedFilter = label;
-          });
-        },
-        selectedColor: const Color(0xFFDCF8C6),
-        backgroundColor: const Color(0xFFF0F2F5),
-        labelStyle: TextStyle(
-          color: isSelected ? const Color(0xFF075E54) : Colors.black87,
-          fontWeight: FontWeight.w500,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFFD8F3DC) : const Color(0xFFF0F2F5),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? const Color(0xFF075E54) : Colors.black87,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              fontSize: 13.5,
+            ),
+          ),
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        showCheckmark: false,
       ),
     );
   }
 }
 
-// -----------------------------------------------------------------
-// Placeholder Screen for Unimplemented Tabs
-// -----------------------------------------------------------------
+class _ChatListTile extends StatelessWidget {
+  final ChatModel chat;
+  final String receiverId;
+  final bool isMe;
+  final int unreadCount;
+  final bool isLastMessageRead;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+
+  const _ChatListTile({
+    required this.chat,
+    required this.receiverId,
+    required this.isMe,
+    required this.unreadCount,
+    this.isLastMessageRead = true,
+    this.isSelected = false,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool hasUnread = unreadCount > 0;
+
+    return Container(
+      color: isSelected ? const Color(0xFFE8F5E9) : Colors.transparent,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+        onTap: onTap,
+        onLongPress: onLongPress,
+        leading: Stack(
+          children: [
+            CircleAvatar(
+              radius: 26,
+              backgroundColor: Colors.grey[200],
+              backgroundImage: chat.avatarUrl.isNotEmpty ? NetworkImage(chat.avatarUrl) : null,
+              onBackgroundImageError: chat.avatarUrl.isNotEmpty ? (_, _) {} : null,
+              child: chat.avatarUrl.isEmpty
+                  ? (chat.isGroup
+                      ? const Icon(Icons.groups, size: 28, color: Color(0xFF00A884))
+                      : Text(
+                          chat.name.isNotEmpty ? chat.name[0].toUpperCase() : '?',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF075E54)),
+                        ))
+                  : null,
+            ),
+            if (isSelected)
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF00A884),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check, size: 14, color: Colors.white),
+                ),
+              ),
+          ],
+        ),
+        title: Text(
+          chat.name,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: Colors.black87,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4.0),
+          child: Row(
+            children: [
+              if (isMe && chat.lastMessage != 'Tap to chat' && chat.lastMessage != 'No messages yet') ...[
+                Icon(
+                  Icons.done_all,
+                  size: 16,
+                  color: isLastMessageRead ? const Color(0xFF53BDEB) : const Color(0xFF8696A0),
+                ),
+                const SizedBox(width: 4),
+              ],
+              Expanded(
+                child: Text(
+                  isMe && !chat.lastMessage.startsWith('You:') && chat.lastMessage != 'Tap to chat' && chat.lastMessage != 'No messages yet'
+                      ? 'You: ${chat.lastMessage}'
+                      : chat.lastMessage,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: hasUnread ? Colors.black87 : Colors.grey[600],
+                    fontWeight: hasUnread ? FontWeight.w600 : FontWeight.normal,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              chat.time,
+              style: TextStyle(
+                fontSize: 12,
+                color: hasUnread ? const Color(0xFF25D366) : Colors.grey[600],
+                fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+            const SizedBox(height: 5),
+            if (hasUnread)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6.5, vertical: 2.5),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF25D366),
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  unreadCount > 99 ? '99+' : '$unreadCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              )
+            else
+              const SizedBox(height: 18),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class PlaceholderScreen extends StatelessWidget {
   final String title;
+
   const PlaceholderScreen({super.key, required this.title});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        foregroundColor: Colors.black87,
+      ),
       body: Center(
-        child: Text(
-          '$title Screen Coming Soon',
-          style: const TextStyle(fontSize: 18, color: Colors.grey),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.groups_outlined, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Connect with your community and stay informed',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ],
         ),
       ),
     );

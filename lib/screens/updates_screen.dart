@@ -1,4 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+import '../models/status_model.dart';
+import '../provider/status_provider.dart';
+import '../provider/home_provider.dart';
+import '../services/image_picker_service.dart';
+import 'create_text_status_screen.dart';
+import 'status_media_preview_screen.dart';
+import 'status_viewer_screen.dart';
 
 class UpdatesScreen extends StatefulWidget {
   const UpdatesScreen({super.key});
@@ -8,84 +18,167 @@ class UpdatesScreen extends StatefulWidget {
 }
 
 class _UpdatesScreenState extends State<UpdatesScreen> {
-  // Dummy status model and list
-  final List<Map<String, dynamic>> _statuses = [
-    {
-      'name': 'Tahreem',
-      'imageUrl': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb',
-      'hasStory': true,
-    },
-    {
-      'name': 'Sir Shafique ...',
-      'imageUrl': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
-      'hasStory': true,
-    },
-    {
-      'name': 'Rizwan Army',
-      'imageUrl': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
-      'hasStory': true,
-    },
-    {
-      'name': 'Ahmad Hassan',
-      'imageUrl': 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce',
-      'hasStory': true,
-    },
-  ];
+  final ImagePickerService _imagePickerService = ImagePickerService();
+  bool _isViewedExpanded = true;
 
-  // Dummy channels list
-  final List<Map<String, dynamic>> _channels = [
-    {
-      'name': 'CNN News18',
-      'time': '7:59 AM',
-      'message': 'Cargo Ship Carrying Turkish...',
-      'unreadCount': 118,
-      'isLink': true,
-      'avatarColor': Colors.red,
-    },
-    {
-      'name': 'Cool Education (Career Guide)',
-      'time': '7:51 AM',
-      'message': 'عمران خان کو الشفاء ہاسپٹل سے صبح سویر...',
-      'unreadCount': 3,
-      'isLink': false,
-      'avatarColor': Colors.green,
-    },
-    {
-      'name': 'BBC News US',
-      'time': '5:46 AM',
-      'message': 'Prime Minister Mark Carney ha...',
-      'unreadCount': 121,
-      'isLink': false,
-      'avatarColor': Colors.red[900],
-    },
-    {
-      'name': 'Dawn.com',
-      'time': '1:30 AM',
-      'message': 'PTI founder Imran Khan was shifted...',
-      'unreadCount': 0,
-      'isLink': false,
-      'avatarColor': Colors.black,
-    },
-    {
-      'name': 'ScholarshipsAds - Scholars...',
-      'time': 'Yesterday',
-      'message': 'https://www.findinguni.com/sc...',
-      'unreadCount': 105,
-      'isLink': true,
-      'avatarColor': Colors.blue[900],
-    },
-    {
-      'name': 'Geo News',
-      'time': 'Yesterday',
-      'message': 'Federal Cabinet Approved Amendment...',
-      'unreadCount': 12,
-      'isLink': false,
-      'avatarColor': Colors.blue,
-    },
-  ];
+  void _showMediaPickerOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            child: Wrap(
+              alignment: WrapAlignment.spaceAround,
+              runSpacing: 20,
+              spacing: 24,
+              children: [
+                _buildOptionItem(
+                  icon: Icons.camera_alt,
+                  color: Colors.pink,
+                  label: 'Camera',
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    final file = await _imagePickerService.pickFromCamera();
+                    if (file != null && mounted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StatusMediaPreviewScreen(file: file, mediaType: 'image'),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                _buildOptionItem(
+                  icon: Icons.photo_library,
+                  color: Colors.purple,
+                  label: 'Gallery',
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    final file = await _imagePickerService.pickFromGallery();
+                    if (file != null && mounted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StatusMediaPreviewScreen(file: file, mediaType: 'image'),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                _buildOptionItem(
+                  icon: Icons.videocam,
+                  color: Colors.deepOrange,
+                  label: 'Video',
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    final file = await _imagePickerService.pickVideoFromGallery();
+                    if (file != null && mounted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StatusMediaPreviewScreen(file: file, mediaType: 'video'),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                _buildOptionItem(
+                  icon: Icons.edit,
+                  color: const Color(0xFF075E54),
+                  label: 'Text Status',
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CreateTextStatusScreen()),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildOptionItem({
+    required IconData icon,
+    required Color color,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: color,
+            child: Icon(icon, color: Colors.white, size: 28),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
+  }
+
+  String _formatRelativeTime(DateTime? dateTime) {
+    if (dateTime == null) return '';
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} minutes ago';
+    } else if (dateTime.day == now.day && dateTime.month == now.month && dateTime.year == now.year) {
+      return DateFormat('h:mm a').format(dateTime).toLowerCase();
+    } else if (now.difference(dateTime).inDays == 1 || (now.day - dateTime.day == 1)) {
+      return 'Yesterday';
+    } else {
+      return DateFormat('dd/MM/yyyy').format(dateTime);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final homeProvider = Provider.of<HomeProvider>(context);
+    final statusProvider = Provider.of<StatusProvider>(context);
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final currentUserId = currentUser?.uid ?? '';
+    final String myAvatarUrl = currentUser?.photoURL ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb';
+
+    // Sync chat contact UIDs to StatusProvider for real-time contact filtering
+    final contactUids = <String>{};
+    for (var doc in homeProvider.chatDocs) {
+      final data = doc.data() as Map<String, dynamic>?;
+      if (data != null && data['users'] is List) {
+        final users = data['users'] as List;
+        for (var u in users) {
+          if (u is String && u != currentUserId && u.isNotEmpty) {
+            contactUids.add(u);
+          }
+        }
+      }
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      statusProvider.updateContactUids(contactUids);
+    });
+
+    final myStatus = statusProvider.myStatus;
+    final recentStatuses = statusProvider.recentStatuses;
+    final viewedStatuses = statusProvider.viewedStatuses;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -101,10 +194,6 @@ class _UpdatesScreenState extends State<UpdatesScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.camera_alt_outlined, color: Colors.black87),
-            onPressed: () {},
-          ),
-          IconButton(
             icon: const Icon(Icons.search, color: Colors.black87),
             onPressed: () {},
           ),
@@ -119,246 +208,372 @@ class _UpdatesScreenState extends State<UpdatesScreen> {
         ],
       ),
       body: ListView(
+        padding: const EdgeInsets.only(bottom: 80),
         children: [
-          // Status Section Title
+          // Section Title: Status
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 6),
             child: Text(
               'Status',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
             ),
           ),
 
-          // Horizontal Scrollable Status List
-          SizedBox(
-            height: 190,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: _statuses.length + 1, // +1 for "Add status" item
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return _buildAddStatusCard();
-                }
-                final status = _statuses[index - 1];
-                return _buildStatusCard(status['name'], status['imageUrl']);
-              },
-            ),
-          ),
+          // "My Status" ListTile
+          _buildMyStatusTile(myStatus, myAvatarUrl, currentUserId),
 
-          const Divider(thickness: 8, color: Color(0xFFF0F2F5)),
-
-          // Channels Section Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Channels',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
-                ),
-                OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    side: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  child: const Text('Explore', style: TextStyle(color: Color(0xFF075E54), fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
-          ),
-
-          // Channels List
-          ..._channels.map((channel) => ListTile(
-            leading: CircleAvatar(
-              radius: 26,
-              backgroundColor: channel['avatarColor'],
+          // Recent updates section
+          if (recentStatuses.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
               child: Text(
-                channel['name'][0],
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
-              ),
-            ),
-            title: Text(
-              channel['name'],
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 4.0),
-              child: Row(
-                children: [
-                  if (channel['isLink']) ...[
-                    const Icon(Icons.link, size: 16, color: Colors.grey),
-                    const SizedBox(width: 4),
-                  ],
-                  Expanded(
-                    child: Text(
-                      channel['message'],
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  channel['time'],
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                'Recent updates',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
                 ),
-                const SizedBox(height: 4),
-                if (channel['unreadCount'] > 0)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF25D366),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${channel['unreadCount']}',
-                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-              ],
+              ),
             ),
-            onTap: () {},
-          )),
+            ...recentStatuses.asMap().entries.map((entry) {
+              return _buildContactStatusTile(
+                entry.value,
+                entry.key,
+                recentStatuses,
+                currentUserId,
+              );
+            }),
+          ],
+
+          // Viewed updates section
+          if (viewedStatuses.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _isViewedExpanded = !_isViewedExpanded;
+                  });
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Viewed updates',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    Icon(
+                      _isViewedExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                      color: Colors.grey[600],
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (_isViewedExpanded)
+              ...viewedStatuses.asMap().entries.map((entry) {
+                return _buildContactStatusTile(
+                  entry.value,
+                  entry.key,
+                  viewedStatuses,
+                  currentUserId,
+                );
+              }),
+          ],
+
+          // Empty state for contacts
+          if (recentStatuses.isEmpty && viewedStatuses.isEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(Icons.amp_stories_outlined, color: Colors.grey[400], size: 48),
+                    const SizedBox(height: 10),
+                    Text(
+                      'No status updates yet',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 15, fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Statuses from your contacts will appear here',
+                      style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          // Pencil FAB (mini)
           FloatingActionButton(
             heroTag: 'pencil_update',
             mini: true,
             backgroundColor: const Color(0xFFF0F2F5),
-            elevation: 2,
-            onPressed: () {},
-            child: const Icon(Icons.edit, color: Colors.black87),
+            elevation: 3,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CreateTextStatusScreen()),
+              );
+            },
+            child: const Icon(Icons.edit, color: Colors.black87, size: 20),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
+          // Camera FAB (rounded squircle)
           FloatingActionButton(
             heroTag: 'camera_update',
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             backgroundColor: const Color(0xFF25D366),
-            child: const Icon(Icons.camera_alt, color: Colors.white),
-            onPressed: () {},
+            elevation: 4,
+            onPressed: () => _showMediaPickerOptions(context),
+            child: const Icon(Icons.camera_alt, color: Colors.white, size: 26),
           ),
         ],
       ),
     );
   }
 
-  // "Add Status" custom vertical story card widget
-  Widget _buildAddStatusCard() {
-    return Container(
-      width: 100,
-      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
+  // "My Status" ListTile (matching WhatsApp vertical layout)
+  Widget _buildMyStatusTile(StatusModel? myStatus, String avatarUrl, String currentUserId) {
+    final bool hasActive = myStatus != null && myStatus.hasActiveStatus;
+
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Expanded(
-            flex: 3,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-                  child: Image.network(
-                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb',
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 8,
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF25D366),
-                      shape: BoxShape.circle,
-                    ),
-                    padding: const EdgeInsets.all(2),
-                    child: const Icon(Icons.add, color: Colors.white, size: 18),
-                  ),
-                ),
-              ],
+          if (hasActive)
+            _SegmentedStatusAvatar(
+              status: myStatus,
+              currentUserId: currentUserId,
+              radius: 25,
+            )
+          else
+            CircleAvatar(
+              radius: 25,
+              backgroundColor: Colors.grey[300],
+              backgroundImage: NetworkImage(avatarUrl),
             ),
-          ),
-          const Expanded(
-            flex: 1,
-            child: Center(
-              child: Text(
-                'Add status',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
+          if (!hasActive)
+            Positioned(
+              bottom: -1,
+              right: -1,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF25D366),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                padding: const EdgeInsets.all(2),
+                child: const Icon(Icons.add, color: Colors.white, size: 14),
               ),
             ),
+        ],
+      ),
+      title: Text(
+        hasActive ? 'My status' : 'Add status',
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+          color: Colors.black87,
+        ),
+      ),
+      subtitle: Text(
+        hasActive
+            ? _formatRelativeTime(myStatus.latestItem?.createdAt)
+            : 'Disappears after 24 hours',
+        style: TextStyle(
+          color: Colors.grey[600],
+          fontSize: 13,
+        ),
+      ),
+      trailing: hasActive
+          ? IconButton(
+              icon: const Icon(Icons.more_horiz, color: Colors.grey),
+              onPressed: () => _showMediaPickerOptions(context),
+            )
+          : null,
+      onTap: () {
+        if (hasActive) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => StatusViewerScreen(
+                statuses: [myStatus],
+                initialUserIndex: 0,
+              ),
+            ),
+          );
+        } else {
+          _showMediaPickerOptions(context);
+        }
+      },
+    );
+  }
+
+  // Contact status ListTile with segmented circle ring
+  Widget _buildContactStatusTile(
+    StatusModel status,
+    int index,
+    List<StatusModel> statusList,
+    String currentUserId,
+  ) {
+    final latestItem = status.latestItem;
+
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      leading: _SegmentedStatusAvatar(
+        status: status,
+        currentUserId: currentUserId,
+        radius: 25,
+      ),
+      title: Text(
+        status.userName,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+          color: Colors.black87,
+        ),
+      ),
+      subtitle: Text(
+        _formatRelativeTime(latestItem?.createdAt),
+        style: TextStyle(
+          color: Colors.grey[600],
+          fontSize: 13,
+        ),
+      ),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => StatusViewerScreen(
+              statuses: statusList,
+              initialUserIndex: index,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Custom segmented avatar widget with segmented green/grey status ring
+class _SegmentedStatusAvatar extends StatelessWidget {
+  final StatusModel status;
+  final String currentUserId;
+  final double radius;
+
+  const _SegmentedStatusAvatar({
+    required this.status,
+    required this.currentUserId,
+    this.radius = 25,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final activeItems = status.activeItems;
+    final count = activeItems.length;
+    final viewedList = activeItems.map((item) => item.isViewedBy(currentUserId)).toList();
+
+    return SizedBox(
+      width: radius * 2 + 8,
+      height: radius * 2 + 8,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Segmented Ring Custom Painter
+          CustomPaint(
+            size: Size(radius * 2 + 8, radius * 2 + 8),
+            painter: _SegmentedRingPainter(
+              count: count,
+              viewedList: viewedList,
+              strokeWidth: 2.5,
+            ),
+          ),
+          // User Avatar
+          CircleAvatar(
+            radius: radius,
+            backgroundColor: Colors.grey[300],
+            backgroundImage: NetworkImage(status.userImage),
           ),
         ],
       ),
     );
   }
+}
 
-  // Standard user status card widget with gradient border effect
-  Widget _buildStatusCard(String name, String imageUrl) {
-    return Container(
-      width: 100,
-      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        image: DecorationImage(
-          image: NetworkImage(imageUrl),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
-          ),
-        ),
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF25D366), width: 3),
-              ),
-              child: CircleAvatar(
-                radius: 18,
-                backgroundImage: NetworkImage(imageUrl),
-              ),
-            ),
-            Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+/// Custom painter to draw segmented arcs representing each active status item
+class _SegmentedRingPainter extends CustomPainter {
+  final int count;
+  final List<bool> viewedList;
+  final double strokeWidth;
+
+  _SegmentedRingPainter({
+    required this.count,
+    required this.viewedList,
+    this.strokeWidth = 2.5,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (count <= 0) return;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    if (count == 1) {
+      paint.color = (viewedList.isNotEmpty && viewedList.first)
+          ? Colors.grey.shade400
+          : const Color(0xFF25D366);
+      canvas.drawCircle(center, radius, paint);
+      return;
+    }
+
+    const double gapDegrees = 6.0;
+    final double totalGapDegrees = count * gapDegrees;
+    final double arcDegrees = (360.0 - totalGapDegrees) / count;
+    final double gapRadian = gapDegrees * (3.141592653589793 / 180.0);
+    final double arcRadian = arcDegrees * (3.141592653589793 / 180.0);
+
+    double startAngle = -3.141592653589793 / 2; // start at 12 o'clock
+
+    for (int i = 0; i < count; i++) {
+      final isViewed = (i < viewedList.length) ? viewedList[i] : false;
+      paint.color = isViewed ? Colors.grey.shade400 : const Color(0xFF25D366);
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle + (gapRadian / 2),
+        arcRadian,
+        false,
+        paint,
+      );
+
+      startAngle += arcRadian + gapRadian;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SegmentedRingPainter oldDelegate) {
+    return oldDelegate.count != count || oldDelegate.viewedList != viewedList;
   }
 }

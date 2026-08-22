@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "180012934976",
+    "project_id": "chat-application-dc870",
+    "storage_bucket": "chat-application-dc870.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:180012934976:android:b1f8891f4e1658cae1fca5",
+        "android_client_info": {
+          "package_name": "com.example.chat_application"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "180012934976-oh80o30ql4apeolffdq3aa3up3a5tg7m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.chat_application",
+            "certificate_hash": "c94e5d8d4721790c24260b7e25e6a8f507d62250"
+          }
+        },
+        {
+          "client_id": "180012934976-35g3de8sheedkm24noduju0nqejqg9r2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgT3aTheE8tuulu2YU1n1dX9A3-JFAQoA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "180012934976-35g3de8sheedkm24noduju0nqejqg9r2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

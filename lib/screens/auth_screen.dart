@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/user_model.dart';
 import 'forgot_password_screen.dart';
 import 'home_screen.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -24,6 +28,7 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _obscurePassword = true;
   bool _obscureReenterPassword = true;
   bool _agreeToTerms = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -34,8 +39,7 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  void _submitForm() {
-    // Validate form inputs
+  void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       if (!isLoginSelected && !_agreeToTerms) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -47,13 +51,131 @@ class _AuthScreenState extends State<AuthScreen> {
         return;
       }
 
-      // If valid, proceed with authentication logic
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const HomeScreen(),
+      setState(() => _isLoading = true);
+
+      try {
+        if (isLoginSelected) {
+          // --- LOGIN LOGIC ---
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+        } else {
+          // --- SIGN UP LOGIC ---
+          UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+
+          String uid = userCredential.user!.uid;
+          String uniqueId = UserModel.generateUniqueId();
+
+          // Create User Profile in Firestore
+          UserModel newUser = UserModel(
+            uid: uid,
+            uniqueId: uniqueId,
+            name: _nameController.text.trim(),
+            email: _emailController.text.trim(),
+            lastSeen: Timestamp.now(),
+            createdAt: DateTime.now(),
+          );
+
+          await FirebaseFirestore.instance.collection('users').doc(uid).set(newUser.toMap());
+        }
+
+        // Navigate to Home upon success
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+          );
+        }
+      } on FirebaseAuthException catch (e) {
+        print('Firebase Error Code: ${e.code}'); // Check your debug console for this!
+        print('Firebase Error Message: ${e.message}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message ?? 'Authentication failed'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _signInWithGoogle() async {
+    setState(() => _isLoading = true);
+
+    try {
+      // 1. Trigger the Google Authentication flow
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+      if (googleUser == null) {
+        // User canceled the sign-in
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // 2. Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      // 3. Create a new credential for Firebase
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // 4. Sign in to Firebase with the credential
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      User? user = userCredential.user;
+
+      if (user != null) {
+        // 5. Check if user already exists in Firestore
+        final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+
+        if (!userDoc.exists) {
+          // If first time Google sign-in, create a new document with a Unique ID
+          String uniqueId = UserModel.generateUniqueId();
+
+          UserModel newUser = UserModel(
+            uid: user.uid,
+            uniqueId: uniqueId,
+            name: user.displayName ?? 'User',
+            email: user.email ?? '',
+            profileImage: user.photoURL ?? '',
+            lastSeen: Timestamp.now(),
+            createdAt: DateTime.now(),
+          );
+
+          await FirebaseFirestore.instance.collection('users').doc(user.uid).set(newUser.toMap());
+        }
+
+        // 6. Navigate to Home
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+          );
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message ?? 'Google Sign-In failed'),
+          backgroundColor: Colors.redAccent,
         ),
       );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('An error occurred: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -88,15 +210,15 @@ class _AuthScreenState extends State<AuthScreen> {
                           size: 40,
                           color: Color(0xFF00A884),
                         ),
-                      Text(
-                        'Techaxe Chat',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF111B21),
-                          letterSpacing: 0.5,
+                        Text(
+                          'Techaxe Chat',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF111B21),
+                            letterSpacing: 0.5,
+                          ),
                         ),
-                      ),
                       ]
                   ),
                 ),
@@ -193,14 +315,13 @@ class _AuthScreenState extends State<AuthScreen> {
                 _buildLabel('Email Address'),
                 _buildTextField(
                   controller: _emailController,
-                  hintText: 'alex@gmail.com',
+                  hintText: 'husnain@gmail.com',
                   prefixIcon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Please enter your email address';
                     }
-                    // Email regex validation
                     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
                     if (!emailRegex.hasMatch(value.trim())) {
                       return 'Please enter a valid email address';
@@ -337,8 +458,17 @@ class _AuthScreenState extends State<AuthScreen> {
                       elevation: 2,
                       shadowColor: const Color(0xFF00A884).withOpacity(0.4),
                     ),
-                    onPressed: _submitForm,
-                    child: Text(
+                    onPressed: _isLoading ? null : _submitForm,
+                    child: _isLoading
+                        ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                        : Text(
                       isLoginSelected ? 'Log In' : 'Sign Up',
                       style: const TextStyle(
                         fontSize: 16,
@@ -387,32 +517,9 @@ class _AuthScreenState extends State<AuthScreen> {
                             color: Colors.black87,
                           ),
                         ),
-                        onPressed: () {},
+                        onPressed: _isLoading ? null : _signInWithGoogle, // Hooked up here!
                       ),
                     ),
-                    // const SizedBox(width: 16),
-                    // Expanded(
-                    //   child: OutlinedButton.icon(
-                    //     style: OutlinedButton.styleFrom(
-                    //       padding: const EdgeInsets.symmetric(vertical: 12),
-                    //       side: const BorderSide(color: Colors.black12),
-                    //       shape: RoundedRectangleBorder(
-                    //         borderRadius: BorderRadius.circular(14),
-                    //       ),
-                    //       backgroundColor: Colors.white,
-                    //     ),
-                    //     icon: const Icon(Icons.apple, size: 22, color: Colors.black),
-                    //     label: const Text(
-                    //       'Apple',
-                    //       style: TextStyle(
-                    //         fontSize: 14,
-                    //         fontWeight: FontWeight.w600,
-                    //         color: Colors.black87,
-                    //       ),
-                    //     ),
-                    //     onPressed: () {},
-                    //   ),
-                    // ),
                   ],
                 ),
                 const SizedBox(height: 30),

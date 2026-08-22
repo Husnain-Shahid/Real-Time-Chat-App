@@ -26,8 +26,27 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
   bool _isFavorite = false;
   bool _isMuted = false;
 
-  String _getChatRoomId() {
-    return _databaseService.getChatRoomId(_currentUserId, widget.receiverId);
+  late final String _chatRoomId;
+  late final Stream<DocumentSnapshot> _userStream;
+  late final Stream<QuerySnapshot> _mediaStream;
+  late final Stream<QuerySnapshot> _commonGroupsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _chatRoomId = _databaseService.getChatRoomId(_currentUserId, widget.receiverId);
+    _userStream = FirebaseFirestore.instance.collection('users').doc(widget.receiverId).snapshots();
+    _mediaStream = FirebaseFirestore.instance
+        .collection('chat_rooms')
+        .doc(_chatRoomId)
+        .collection('messages')
+        .where('mediaUrl', isNull: false)
+        .snapshots();
+    _commonGroupsStream = FirebaseFirestore.instance
+        .collection('chat_rooms')
+        .where('isGroup', isEqualTo: true)
+        .where('users', arrayContains: _currentUserId)
+        .snapshots();
   }
 
   void _confirmClearChat() {
@@ -75,8 +94,6 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final String chatRoomId = _getChatRoomId();
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -97,10 +114,10 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
           ),
         ],
       ),
-      body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('users').doc(widget.receiverId).get(),
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: _userStream,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
             return const Center(
               child: CircularProgressIndicator(color: Color(0xFF00A884)),
             );
@@ -243,17 +260,12 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
 
               // Media, links, and docs Section (Live Stream from chat messages!)
               StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('chat_rooms')
-                    .doc(chatRoomId)
-                    .collection('messages')
-                    .where('mediaUrl', isNull: false)
-                    .snapshots(),
+                stream: _mediaStream,
                 builder: (context, mediaSnap) {
                   List<String> mediaUrls = [];
                   if (mediaSnap.hasData) {
                     for (var doc in mediaSnap.data!.docs) {
-                      final mData = doc.data();
+                      final mData = doc.data() as Map<String, dynamic>;
                       final url = (mData['mediaUrl'] ?? mData['imageUrl']) as String?;
                       if (url != null && url.isNotEmpty) {
                         mediaUrls.add(url);
@@ -340,7 +352,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
                 subtitle: Text(_isMuted ? 'Muted' : 'Default', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
                 trailing: Switch(
                   value: !_isMuted,
-                  activeColor: const Color(0xFF00A884),
+                  activeThumbColor: const Color(0xFF00A884),
                   onChanged: (val) {
                     setState(() {
                       _isMuted = !val;
@@ -376,11 +388,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
 
               // ==================== GROUPS IN COMMON ====================
               StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('chat_rooms')
-                    .where('isGroup', isEqualTo: true)
-                    .where('users', arrayContains: _currentUserId)
-                    .snapshots(),
+                stream: _commonGroupsStream,
                 builder: (context, groupSnap) {
                   List<QueryDocumentSnapshot> commonGroups = [];
                   if (groupSnap.hasData) {
@@ -427,12 +435,10 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
                             MaterialPageRoute(
                               builder: (context) => CreateGroupInfoScreen(
                                 selectedMembers: [
-                                  UserModel(
-                                    uid: widget.receiverId,
-                                    name: contactName,
-                                    email: userData['email'] ?? '',
-                                    profileImage: avatarUrl,
-                                  ),
+                                  UserModel.fromMap({
+                                    'uid': widget.receiverId,
+                                    ...userData,
+                                  }),
                                 ],
                               ),
                             ),

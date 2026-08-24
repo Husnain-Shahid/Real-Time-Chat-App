@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/chat_model.dart';
 import '../models/message_model.dart';
 import '../services/database_service.dart';
@@ -225,7 +226,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> with WidgetsBind
                           CircleAvatar(
                             radius: 19,
                             backgroundColor: const Color(0xFFE5F1FF),
-                            backgroundImage: widget.chat.avatarUrl.isNotEmpty ? NetworkImage(widget.chat.avatarUrl) : null,
+                            backgroundImage: widget.chat.avatarUrl.isNotEmpty ? CachedNetworkImageProvider(widget.chat.avatarUrl) : null,
                             onBackgroundImageError: widget.chat.avatarUrl.isNotEmpty ? (_, _) {} : null,
                             child: widget.chat.avatarUrl.isEmpty
                                 ? (widget.chat.isGroup
@@ -977,9 +978,11 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: isSelected ? const Color(0xFF0078FF).withValues(alpha: 0.15) : Colors.transparent,
-      child: _buildBubbleContent(context),
+    return RepaintBoundary(
+      child: Container(
+        color: isSelected ? const Color(0xFF0078FF).withValues(alpha: 0.15) : Colors.transparent,
+        child: _buildBubbleContent(context),
+      ),
     );
   }
 
@@ -1032,7 +1035,7 @@ class _MessageBubble extends StatelessWidget {
                       radius: 14,
                       backgroundColor: _getSenderColor(message.senderName ?? '').withValues(alpha: 0.18),
                       backgroundImage: (message.senderImage != null && message.senderImage!.isNotEmpty)
-                          ? NetworkImage(message.senderImage!)
+                          ? CachedNetworkImageProvider(message.senderImage!)
                           : null,
                       onBackgroundImageError: (message.senderImage != null && message.senderImage!.isNotEmpty) ? (_, _) {} : null,
                       child: (message.senderImage == null || message.senderImage!.isEmpty)
@@ -1136,7 +1139,7 @@ class _MessageBubble extends StatelessWidget {
                   radius: 14,
                   backgroundColor: _getSenderColor(message.senderName ?? '').withValues(alpha: 0.18),
                   backgroundImage: (message.senderImage != null && message.senderImage!.isNotEmpty)
-                      ? NetworkImage(message.senderImage!)
+                      ? CachedNetworkImageProvider(message.senderImage!)
                       : null,
                   onBackgroundImageError: (message.senderImage != null && message.senderImage!.isNotEmpty) ? (_, _) {} : null,
                   child: (message.senderImage == null || message.senderImage!.isEmpty)
@@ -1425,22 +1428,19 @@ class _MediaContent extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                message.mediaUrl!,
+              child: CachedNetworkImage(
+                imageUrl: message.mediaUrl!,
                 width: 220,
                 height: 220,
                 fit: BoxFit.cover,
-                cacheWidth: 440,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    width: 220,
-                    height: 220,
-                    color: Colors.grey[200],
-                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0078FF))),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) => Container(
+                memCacheWidth: 440,
+                placeholder: (context, url) => Container(
+                  width: 220,
+                  height: 220,
+                  color: Colors.grey[200],
+                  child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0078FF))),
+                ),
+                errorWidget: (context, url, error) => Container(
                   width: 220,
                   height: 220,
                   color: Colors.grey[300],
@@ -1584,52 +1584,53 @@ class _VoiceNoteMessageBubbleState extends State<_VoiceNoteMessageBubble> {
             ? widget.receiverAvatarUrl
             : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb');
 
-    return GestureDetector(
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
-      behavior: HitTestBehavior.opaque,
-      child: Align(
-        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-          padding: const EdgeInsets.fromLTRB(8, 7, 10, 5),
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.70,
-            minWidth: 225,
-          ),
-          decoration: BoxDecoration(
-            color: isMe ? const Color(0xFFE7F3FF) : Colors.white,
-            borderRadius: BorderRadius.circular(9),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 1,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.message.replyTo != null && !widget.message.isDeletedForEveryone)
-                _ReplyBubble(
-                  author: widget.message.replyAuthor ?? '',
-                  text: widget.message.replyTo!,
-                  isMe: isMe,
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
+        behavior: HitTestBehavior.opaque,
+        child: Align(
+          alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            padding: const EdgeInsets.fromLTRB(8, 7, 10, 5),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.70,
+              minWidth: 225,
+            ),
+            decoration: BoxDecoration(
+              color: isMe ? const Color(0xFFE7F3FF) : Colors.white,
+              borderRadius: BorderRadius.circular(9),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 1,
+                  offset: const Offset(0, 1),
                 ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Avatar with Mic Badge
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: Colors.grey[300],
-                        backgroundImage: NetworkImage(avatarUrl),
-                      ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (widget.message.replyTo != null && !widget.message.isDeletedForEveryone)
+                  _ReplyBubble(
+                    author: widget.message.replyAuthor ?? '',
+                    text: widget.message.replyTo!,
+                    isMe: isMe,
+                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Avatar with Mic Badge
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: Colors.grey[300],
+                          backgroundImage: avatarUrl.isNotEmpty ? CachedNetworkImageProvider(avatarUrl) : null,
+                        ),
                       Positioned(
                         right: -2,
                         bottom: -2,
@@ -1761,6 +1762,7 @@ class _VoiceNoteMessageBubbleState extends State<_VoiceNoteMessageBubble> {
           ),
         ),
       ),
+    ),
     );
   }
 }
@@ -1907,7 +1909,7 @@ class _MediaViewerScreenState extends State<_MediaViewerScreen> {
             child: Center(
               child: isVideo
                   ? (_videoController?.value.isInitialized == true ? AspectRatio(aspectRatio: _videoController!.value.aspectRatio, child: VideoPlayer(_videoController!)) : const CircularProgressIndicator(color: Colors.white))
-                  : InteractiveViewer(child: Image.network(widget.mediaUrl)),
+                  : InteractiveViewer(child: CachedNetworkImage(imageUrl: widget.mediaUrl, placeholder: (_, _) => const Center(child: CircularProgressIndicator(color: Colors.white)), errorWidget: (_, _, _) => const Icon(Icons.broken_image, color: Colors.white))),
             ),
           ),
           if (widget.caption != null && widget.caption!.isNotEmpty && widget.caption != '📷 Photo' && widget.caption != '🎥 Video')
@@ -2360,10 +2362,11 @@ class _WhatsAppAttachmentSheet extends StatelessWidget {
                   final imgUrl = _sampleGalleryThumbnails[index];
                   return GestureDetector(
                     onTap: onPickGallery,
-                    child: Image.network(
-                      imgUrl,
+                    child: CachedNetworkImage(
+                      imageUrl: imgUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => Container(color: Colors.grey[200]),
+                      errorWidget: (_, _, _) => Container(color: Colors.grey[200]),
+                      placeholder: (_, _) => Container(color: Colors.grey[200]),
                     ),
                   );
                 },
@@ -2645,7 +2648,7 @@ class _GroupWelcomeCard extends StatelessWidget {
                   CircleAvatar(
                     radius: 38,
                     backgroundColor: const Color(0xFFE5F1FF),
-                    backgroundImage: groupImage.isNotEmpty ? NetworkImage(groupImage) : null,
+                    backgroundImage: groupImage.isNotEmpty ? CachedNetworkImageProvider(groupImage) : null,
                     onBackgroundImageError: groupImage.isNotEmpty ? (_, _) {} : null,
                     child: groupImage.isEmpty
                         ? const Icon(Icons.groups, size: 40, color: Color(0xFF0078FF))

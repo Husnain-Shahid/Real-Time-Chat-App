@@ -456,7 +456,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       elevation: 2,
-                      shadowColor: const Color(0xFF0078FF).withOpacity(0.4),
+                      shadowColor: const Color(0xFF0078FF).withValues(alpha: 0.4),
                     ),
                     onPressed: _isLoading ? null : _submitForm,
                     child: _isLoading

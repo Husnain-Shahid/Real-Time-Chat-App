@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/chat_model.dart';
 import '../provider/home_provider.dart';
 import '../widget/custom_nav_bar.dart';
@@ -646,113 +647,115 @@ class _ChatListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool hasUnread = unreadCount > 0;
 
-    return Container(
-      color: isSelected ? const Color(0xFFE5F1FF) : Colors.transparent,
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        onTap: onTap,
-        onLongPress: onLongPress,
-        leading: Stack(
-          children: [
-            CircleAvatar(
-              radius: 26,
-              backgroundColor: const Color(0xFFE5F1FF),
-              backgroundImage: chat.avatarUrl.isNotEmpty ? NetworkImage(chat.avatarUrl) : null,
-              onBackgroundImageError: chat.avatarUrl.isNotEmpty ? (_, _) {} : null,
-              child: chat.avatarUrl.isEmpty
-                  ? (chat.isGroup
-                      ? const Icon(Icons.groups, size: 28, color: Color(0xFF0078FF))
-                      : Text(
-                          chat.name.isNotEmpty ? chat.name[0].toUpperCase() : '?',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF0078FF)),
-                        ))
-                  : null,
+    return RepaintBoundary(
+      child: Container(
+        color: isSelected ? const Color(0xFFE5F1FF) : Colors.transparent,
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          onTap: onTap,
+          onLongPress: onLongPress,
+          leading: Stack(
+            children: [
+              CircleAvatar(
+                radius: 26,
+                backgroundColor: const Color(0xFFE5F1FF),
+                backgroundImage: chat.avatarUrl.isNotEmpty ? CachedNetworkImageProvider(chat.avatarUrl) : null,
+                onBackgroundImageError: chat.avatarUrl.isNotEmpty ? (_, _) {} : null,
+                child: chat.avatarUrl.isEmpty
+                    ? (chat.isGroup
+                        ? const Icon(Icons.groups, size: 28, color: Color(0xFF0078FF))
+                        : Text(
+                            chat.name.isNotEmpty ? chat.name[0].toUpperCase() : '?',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF0078FF)),
+                          ))
+                    : null,
+              ),
+              if (isSelected)
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF0078FF),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.check, size: 14, color: Colors.white),
+                  ),
+                ),
+            ],
+          ),
+          title: Text(
+            chat.name,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Colors.black87,
             ),
-            if (isSelected)
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Row(
+              children: [
+                if (isMe && chat.lastMessage != 'Tap to chat' && chat.lastMessage != 'No messages yet') ...[
+                  Icon(
+                    Icons.done_all,
+                    size: 16,
+                    color: isLastMessageRead ? const Color(0xFF0078FF) : const Color(0xFF8696A0),
+                  ),
+                  const SizedBox(width: 4),
+                ],
+                Expanded(
+                  child: Text(
+                    isMe && !chat.lastMessage.startsWith('You:') && chat.lastMessage != 'Tap to chat' && chat.lastMessage != 'No messages yet'
+                        ? 'You: ${chat.lastMessage}'
+                        : chat.lastMessage,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: hasUnread ? Colors.black87 : Colors.grey[600],
+                      fontWeight: hasUnread ? FontWeight.w600 : FontWeight.normal,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          trailing: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                chat.time,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: hasUnread ? const Color(0xFF0078FF) : Colors.grey[600],
+                  fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+              const SizedBox(height: 5),
+              if (hasUnread)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6.5, vertical: 2.5),
                   decoration: const BoxDecoration(
                     color: Color(0xFF0078FF),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check, size: 14, color: Colors.white),
-                ),
-              ),
-          ],
-        ),
-        title: Text(
-          chat.name,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-            color: Colors.black87,
-          ),
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4.0),
-          child: Row(
-            children: [
-              if (isMe && chat.lastMessage != 'Tap to chat' && chat.lastMessage != 'No messages yet') ...[
-                Icon(
-                  Icons.done_all,
-                  size: 16,
-                  color: isLastMessageRead ? const Color(0xFF0078FF) : const Color(0xFF8696A0),
-                ),
-                const SizedBox(width: 4),
-              ],
-              Expanded(
-                child: Text(
-                  isMe && !chat.lastMessage.startsWith('You:') && chat.lastMessage != 'Tap to chat' && chat.lastMessage != 'No messages yet'
-                      ? 'You: ${chat.lastMessage}'
-                      : chat.lastMessage,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: hasUnread ? Colors.black87 : Colors.grey[600],
-                    fontWeight: hasUnread ? FontWeight.w600 : FontWeight.normal,
-                    fontSize: 14,
+                  child: Text(
+                    unreadCount > 99 ? '99+' : '$unreadCount',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-              ),
+                )
+              else
+                const SizedBox(height: 18),
             ],
           ),
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              chat.time,
-              style: TextStyle(
-                fontSize: 12,
-                color: hasUnread ? const Color(0xFF0078FF) : Colors.grey[600],
-                fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-            const SizedBox(height: 5),
-            if (hasUnread)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6.5, vertical: 2.5),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF0078FF),
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  unreadCount > 99 ? '99+' : '$unreadCount',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              )
-            else
-              const SizedBox(height: 18),
-          ],
         ),
       ),
     );

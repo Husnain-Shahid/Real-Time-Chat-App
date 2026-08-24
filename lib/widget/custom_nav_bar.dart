@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -22,13 +23,14 @@ class CustomBottomNavBar extends StatelessWidget {
     final unreadChats = homeProvider.totalUnreadChatsCount;
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(14, 2, 14, bottomPadding > 0 ? 2 : 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
+    return RepaintBoundary(
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(14, 2, 14, bottomPadding > 0 ? 2 : 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
             // Glassmorphic Segmented Capsule: Chats, Updates, Calls
             Expanded(
               child: ClipRRect(
@@ -101,6 +103,7 @@ class CustomBottomNavBar extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -272,7 +275,7 @@ class CustomBottomNavBar extends StatelessWidget {
                           if (profileImage.isNotEmpty) {
                             return CircleAvatar(
                               backgroundColor: const Color(0xFFE5F1FF),
-                              backgroundImage: NetworkImage(profileImage),
+                              backgroundImage: CachedNetworkImageProvider(profileImage),
                               onBackgroundImageError: (_, _) {},
                             );
                           }

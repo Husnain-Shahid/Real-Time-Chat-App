@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/chat_model.dart';
 import '../models/user_model.dart';
 import '../services/cloudinary_service.dart';
@@ -329,7 +330,7 @@ class _CreateGroupInfoScreenState extends State<CreateGroupInfoScreen> {
                           radius: 26,
                           backgroundColor: Colors.grey.shade200,
                           backgroundImage: member.profileImage.isNotEmpty
-                              ? NetworkImage(member.profileImage)
+                              ? CachedNetworkImageProvider(member.profileImage)
                               : null,
                           onBackgroundImageError: member.profileImage.isNotEmpty ? (_, _) {} : null,
                           child: member.profileImage.isEmpty

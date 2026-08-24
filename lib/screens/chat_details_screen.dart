@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/chat_model.dart';
 import '../services/database_service.dart';
 import 'active_call_screen.dart';
@@ -146,7 +147,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
                     CircleAvatar(
                       radius: 56,
                       backgroundColor: const Color(0xFFE5F1FF),
-                      backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                      backgroundImage: avatarUrl.isNotEmpty ? CachedNetworkImageProvider(avatarUrl) : null,
                       onBackgroundImageError: avatarUrl.isNotEmpty ? (_, _) {} : null,
                       child: avatarUrl.isEmpty
                           ? Text(
@@ -312,10 +313,11 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
                                 ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(10),
-                                  child: Image.network(
-                                    mediaUrls[idx],
+                                  child: CachedNetworkImage(
+                                    imageUrl: mediaUrls[idx],
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, _, _) => const Icon(Icons.broken_image, color: Colors.grey),
+                                    placeholder: (_, _) => Container(color: Colors.grey[200]),
+                                    errorWidget: (_, _, _) => const Icon(Icons.broken_image, color: Colors.grey),
                                   ),
                                 ),
                               );
@@ -457,7 +459,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
                           leading: CircleAvatar(
                             radius: 22,
                             backgroundColor: const Color(0xFFE5F1FF),
-                            backgroundImage: gImage.isNotEmpty ? NetworkImage(gImage) : null,
+                            backgroundImage: gImage.isNotEmpty ? CachedNetworkImageProvider(gImage) : null,
                             onBackgroundImageError: gImage.isNotEmpty ? (_, _) {} : null,
                             child: gImage.isEmpty
                                 ? const Icon(Icons.groups, size: 24, color: Color(0xFF0078FF))

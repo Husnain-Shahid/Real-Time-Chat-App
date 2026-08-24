@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/user_model.dart';
 import '../services/database_service.dart';
 
@@ -191,7 +192,7 @@ class _AddGroupMembersScreenState extends State<AddGroupMembersScreen> {
                                       radius: 24,
                                       backgroundColor: const Color(0xFF0078FF).withValues(alpha: 0.15),
                                       backgroundImage: member.profileImage.isNotEmpty
-                                          ? NetworkImage(member.profileImage)
+                                          ? CachedNetworkImageProvider(member.profileImage)
                                           : null,
                                       onBackgroundImageError:
                                           member.profileImage.isNotEmpty ? (_, _) {} : null,
@@ -262,63 +263,65 @@ class _AddGroupMembersScreenState extends State<AddGroupMembersScreen> {
                               final user = filteredContacts[index];
                               final isSelected = _selectedMembers.any((m) => m.uid == user.uid);
 
-                              return ListTile(
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                                onTap: () => _toggleMember(user),
-                                leading: Stack(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 24,
-                                      backgroundColor: Colors.grey[200],
-                                      backgroundImage: user.profileImage.isNotEmpty
-                                          ? NetworkImage(user.profileImage)
-                                          : null,
-                                      onBackgroundImageError:
-                                          user.profileImage.isNotEmpty ? (_, _) {} : null,
-                                      child: user.profileImage.isEmpty
-                                          ? Text(
-                                              user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 18,
-                                                color: Color(0xFF0078FF),
-                                              ),
-                                            )
-                                          : null,
-                                    ),
-                                    if (isSelected)
-                                      Positioned(
-                                        right: 0,
-                                        bottom: 0,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF0078FF),
-                                            shape: BoxShape.circle,
-                                            border: Border.all(color: Colors.white, width: 2),
-                                          ),
-                                          padding: const EdgeInsets.all(2),
-                                          child: const Icon(Icons.check, color: Colors.white, size: 12),
-                                        ),
+                              return RepaintBoundary(
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                  onTap: () => _toggleMember(user),
+                                  leading: Stack(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 24,
+                                        backgroundColor: Colors.grey[200],
+                                        backgroundImage: user.profileImage.isNotEmpty
+                                            ? CachedNetworkImageProvider(user.profileImage)
+                                            : null,
+                                        onBackgroundImageError:
+                                            user.profileImage.isNotEmpty ? (_, _) {} : null,
+                                        child: user.profileImage.isEmpty
+                                            ? Text(
+                                                user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 18,
+                                                  color: Color(0xFF0078FF),
+                                                ),
+                                              )
+                                            : null,
                                       ),
-                                  ],
-                                ),
-                                title: Text(
-                                  user.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Colors.black87,
+                                      if (isSelected)
+                                        Positioned(
+                                          right: 0,
+                                          bottom: 0,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF0078FF),
+                                              shape: BoxShape.circle,
+                                              border: Border.all(color: Colors.white, width: 2),
+                                            ),
+                                            padding: const EdgeInsets.all(2),
+                                            child: const Icon(Icons.check, color: Colors.white, size: 12),
+                                          ),
+                                        ),
+                                    ],
                                   ),
+                                  title: Text(
+                                    user.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    user.about.isNotEmpty ? user.about : 'Hey there! I am using WhatsApp.',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                                  ),
+                                  trailing: isSelected
+                                      ? const Icon(Icons.check_circle, color: Color(0xFF0078FF), size: 24)
+                                      : Icon(Icons.circle_outlined, color: Colors.grey.shade400, size: 24),
                                 ),
-                                subtitle: Text(
-                                  user.about.isNotEmpty ? user.about : 'Hey there! I am using WhatsApp.',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                                ),
-                                trailing: isSelected
-                                    ? const Icon(Icons.check_circle, color: Color(0xFF0078FF), size: 24)
-                                    : Icon(Icons.circle_outlined, color: Colors.grey.shade400, size: 24),
                               );
                             },
                           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/user_model.dart';
 import '../models/chat_model.dart';
 import '../services/database_service.dart';
@@ -242,32 +243,33 @@ class _SearchScreenState extends State<SearchScreen> {
                           final user = _searchResults[index];
                           final isContact = _addedContactUids.contains(user.uid);
 
-                          return Card(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            elevation: 1.5,
-                            margin: const EdgeInsets.only(bottom: 12),
-                            child: Padding(
-                              padding: const EdgeInsets.all(14.0),
-                              child: Row(
-                                children: [
-                                   CircleAvatar(
-                                    radius: 28,
-                                    backgroundColor: const Color(0xFF0078FF).withValues(alpha: 0.12),
-                                    backgroundImage: user.profileImage.isNotEmpty
-                                        ? NetworkImage(user.profileImage)
-                                        : null,
-                                    onBackgroundImageError: user.profileImage.isNotEmpty ? (_, _) {} : null,
-                                    child: user.profileImage.isEmpty
-                                        ? Text(
-                                            user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 22,
-                                              color: Color(0xFF0078FF),
-                                            ),
-                                          )
-                                        : null,
-                                  ),
+                          return RepaintBoundary(
+                            child: Card(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              elevation: 1.5,
+                              margin: const EdgeInsets.only(bottom: 12),
+                              child: Padding(
+                                padding: const EdgeInsets.all(14.0),
+                                child: Row(
+                                  children: [
+                                     CircleAvatar(
+                                      radius: 28,
+                                      backgroundColor: const Color(0xFF0078FF).withValues(alpha: 0.12),
+                                      backgroundImage: user.profileImage.isNotEmpty
+                                          ? CachedNetworkImageProvider(user.profileImage)
+                                          : null,
+                                      onBackgroundImageError: user.profileImage.isNotEmpty ? (_, _) {} : null,
+                                      child: user.profileImage.isEmpty
+                                          ? Text(
+                                              user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 22,
+                                                color: Color(0xFF0078FF),
+                                              ),
+                                            )
+                                          : null,
+                                    ),
                                   const SizedBox(width: 14),
                                   Expanded(
                                     child: Column(
@@ -363,6 +365,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 ],
                               ),
                             ),
+                          ),
                           );
                         },
                       )

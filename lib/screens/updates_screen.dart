@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/status_model.dart';
 import '../provider/status_provider.dart';
 import '../provider/home_provider.dart';
@@ -355,77 +356,79 @@ class _UpdatesScreenState extends State<UpdatesScreen> with AutomaticKeepAliveCl
   Widget _buildMyStatusTile(StatusModel? myStatus, String avatarUrl, String currentUserId) {
     final bool hasActive = myStatus != null && myStatus.hasActiveStatus;
 
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          if (hasActive)
-            _SegmentedStatusAvatar(
-              status: myStatus,
-              currentUserId: currentUserId,
-              radius: 25,
-            )
-          else
-            CircleAvatar(
-              radius: 25,
-              backgroundColor: Colors.grey[300],
-              backgroundImage: NetworkImage(avatarUrl),
-            ),
-          if (!hasActive)
-            Positioned(
-              bottom: -1,
-              right: -1,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0078FF),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+    return RepaintBoundary(
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            if (hasActive)
+              _SegmentedStatusAvatar(
+                status: myStatus,
+                currentUserId: currentUserId,
+                radius: 25,
+              )
+            else
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: Colors.grey[300],
+                backgroundImage: avatarUrl.isNotEmpty ? CachedNetworkImageProvider(avatarUrl) : null,
+              ),
+            if (!hasActive)
+              Positioned(
+                bottom: -1,
+                right: -1,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0078FF),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  padding: const EdgeInsets.all(2),
+                  child: const Icon(Icons.add, color: Colors.white, size: 14),
                 ),
-                padding: const EdgeInsets.all(2),
-                child: const Icon(Icons.add, color: Colors.white, size: 14),
               ),
-            ),
-        ],
-      ),
-      title: Text(
-        hasActive ? 'My status' : 'Add status',
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-          color: Colors.black87,
+          ],
         ),
-      ),
-      subtitle: Text(
-        hasActive
-            ? _formatRelativeTime(myStatus.latestItem?.createdAt)
-            : 'Disappears after 24 hours',
-        style: TextStyle(
-          color: Colors.grey[600],
-          fontSize: 13,
+        title: Text(
+          hasActive ? 'My status' : 'Add status',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: Colors.black87,
+          ),
         ),
-      ),
-      trailing: hasActive
-          ? IconButton(
-              icon: const Icon(Icons.more_horiz, color: Colors.grey),
-              onPressed: () => _showMediaPickerOptions(context),
-            )
-          : null,
-      onTap: () {
-        if (hasActive) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => StatusViewerScreen(
-                statuses: [myStatus],
-                initialUserIndex: 0,
+        subtitle: Text(
+          hasActive
+              ? _formatRelativeTime(myStatus.latestItem?.createdAt)
+              : 'Disappears after 24 hours',
+          style: TextStyle(
+            color: Colors.grey[600],
+            fontSize: 13,
+          ),
+        ),
+        trailing: hasActive
+            ? IconButton(
+                icon: const Icon(Icons.more_horiz, color: Colors.grey),
+                onPressed: () => _showMediaPickerOptions(context),
+              )
+            : null,
+        onTap: () {
+          if (hasActive) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => StatusViewerScreen(
+                  statuses: [myStatus],
+                  initialUserIndex: 0,
+                ),
               ),
-            ),
-          );
-        } else {
-          _showMediaPickerOptions(context);
-        }
-      },
+            );
+          } else {
+            _showMediaPickerOptions(context);
+          }
+        },
+      ),
     );
   }
 
@@ -438,39 +441,41 @@ class _UpdatesScreenState extends State<UpdatesScreen> with AutomaticKeepAliveCl
   ) {
     final latestItem = status.latestItem;
 
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      leading: _SegmentedStatusAvatar(
-        status: status,
-        currentUserId: currentUserId,
-        radius: 25,
-      ),
-      title: Text(
-        status.userName,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-          color: Colors.black87,
+    return RepaintBoundary(
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+        leading: _SegmentedStatusAvatar(
+          status: status,
+          currentUserId: currentUserId,
+          radius: 25,
         ),
-      ),
-      subtitle: Text(
-        _formatRelativeTime(latestItem?.createdAt),
-        style: TextStyle(
-          color: Colors.grey[600],
-          fontSize: 13,
-        ),
-      ),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => StatusViewerScreen(
-              statuses: statusList,
-              initialUserIndex: index,
-            ),
+        title: Text(
+          status.userName,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: Colors.black87,
           ),
-        );
-      },
+        ),
+        subtitle: Text(
+          _formatRelativeTime(latestItem?.createdAt),
+          style: TextStyle(
+            color: Colors.grey[600],
+            fontSize: 13,
+          ),
+        ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => StatusViewerScreen(
+                statuses: statusList,
+                initialUserIndex: index,
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -493,28 +498,30 @@ class _SegmentedStatusAvatar extends StatelessWidget {
     final count = activeItems.length;
     final viewedList = activeItems.map((item) => item.isViewedBy(currentUserId)).toList();
 
-    return SizedBox(
-      width: radius * 2 + 8,
-      height: radius * 2 + 8,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Segmented Ring Custom Painter
-          CustomPaint(
-            size: Size(radius * 2 + 8, radius * 2 + 8),
-            painter: _SegmentedRingPainter(
-              count: count,
-              viewedList: viewedList,
-              strokeWidth: 2.5,
+    return RepaintBoundary(
+      child: SizedBox(
+        width: radius * 2 + 8,
+        height: radius * 2 + 8,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Segmented Ring Custom Painter
+            CustomPaint(
+              size: Size(radius * 2 + 8, radius * 2 + 8),
+              painter: _SegmentedRingPainter(
+                count: count,
+                viewedList: viewedList,
+                strokeWidth: 2.5,
+              ),
             ),
-          ),
-          // User Avatar
-          CircleAvatar(
-            radius: radius,
-            backgroundColor: Colors.grey[300],
-            backgroundImage: NetworkImage(status.userImage),
-          ),
-        ],
+            // User Avatar
+            CircleAvatar(
+              radius: radius,
+              backgroundColor: Colors.grey[300],
+              backgroundImage: status.userImage.isNotEmpty ? CachedNetworkImageProvider(status.userImage) : null,
+            ),
+          ],
+        ),
       ),
     );
   }

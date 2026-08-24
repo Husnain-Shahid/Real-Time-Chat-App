@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/chat_model.dart';
 import '../models/user_model.dart';
 import '../services/database_service.dart';
@@ -274,7 +275,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                 CircleAvatar(
                   radius: 20,
                   backgroundColor: const Color(0xFFE5F1FF),
-                  backgroundImage: groupImage.isNotEmpty ? NetworkImage(groupImage) : null,
+                  backgroundImage: groupImage.isNotEmpty ? CachedNetworkImageProvider(groupImage) : null,
                   onBackgroundImageError: groupImage.isNotEmpty ? (_, _) {} : null,
                   child: groupImage.isEmpty
                       ? const Icon(Icons.groups, color: Color(0xFF0078FF), size: 24)
@@ -514,69 +515,71 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                           ? member.name.trim().split(' ').map((e) => e.isNotEmpty ? e[0].toUpperCase() : '').take(2).join()
                           : '?';
 
-                      return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-                        onTap: () => _showMemberOptions(member, createdBy, groupName),
-                        leading: CircleAvatar(
-                          radius: 22,
-                          backgroundColor: const Color(0xFFE5F1FF),
-                          backgroundImage: member.profileImage.isNotEmpty
-                              ? NetworkImage(member.profileImage)
-                              : null,
-                          onBackgroundImageError: member.profileImage.isNotEmpty ? (_, _) {} : null,
-                          child: member.profileImage.isEmpty
-                              ? Text(
-                                  initials,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
+                      return RepaintBoundary(
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+                          onTap: () => _showMemberOptions(member, createdBy, groupName),
+                          leading: CircleAvatar(
+                            radius: 22,
+                            backgroundColor: const Color(0xFFE5F1FF),
+                            backgroundImage: member.profileImage.isNotEmpty
+                                ? CachedNetworkImageProvider(member.profileImage)
+                                : null,
+                            onBackgroundImageError: member.profileImage.isNotEmpty ? (_, _) {} : null,
+                            child: member.profileImage.isEmpty
+                                ? Text(
+                                    initials,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                      color: Color(0xFF0078FF),
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          title: Text(
+                            isMe ? 'You' : member.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          subtitle: isMe
+                              ? const Text(
+                                  'Add member tag',
+                                  style: TextStyle(
+                                    fontSize: 13,
                                     color: Color(0xFF0078FF),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                )
+                              : (member.about.isNotEmpty
+                                  ? Text(
+                                      member.about,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                                    )
+                                  : null),
+                          trailing: isMemberCreator
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE5F1FF),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'Group Admin',
+                                    style: TextStyle(
+                                      color: Color(0xFF0078FF),
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 )
                               : null,
                         ),
-                        title: Text(
-                          isMe ? 'You' : member.name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        subtitle: isMe
-                            ? const Text(
-                                'Add member tag',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF0078FF),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              )
-                            : (member.about.isNotEmpty
-                                ? Text(
-                                    member.about,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                                  )
-                                : null),
-                        trailing: isMemberCreator
-                            ? Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE5F1FF),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text(
-                                  'Group Admin',
-                                  style: TextStyle(
-                                    color: Color(0xFF0078FF),
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              )
-                            : null,
                       );
                     }).toList(),
                   );

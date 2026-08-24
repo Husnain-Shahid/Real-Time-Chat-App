@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ActiveCallScreen extends StatefulWidget {
   final String contactName;
@@ -80,7 +81,7 @@ class _ActiveCallScreenState extends State<ActiveCallScreen> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                         blurRadius: 20,
                         spreadRadius: 5,
                       ),
@@ -90,7 +91,7 @@ class _ActiveCallScreenState extends State<ActiveCallScreen> {
                     radius: 75,
                     backgroundColor: const Color(0xFF222D34),
                     backgroundImage: widget.profileImageUrl != null
-                        ? NetworkImage(widget.profileImageUrl!)
+                        ? CachedNetworkImageProvider(widget.profileImageUrl!)
                         : null,
                     child: widget.profileImageUrl == null
                         ? const Icon(

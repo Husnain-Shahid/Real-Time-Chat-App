@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../services/cloudinary_service.dart';
 import '../services/image_picker_service.dart';
 import 'crop_image_screen.dart';
@@ -447,7 +448,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   CircleAvatar(
                     radius: 75,
                     backgroundColor: const Color(0xFFE5F1FF),
-                    backgroundImage: _profileImage.isNotEmpty ? NetworkImage(_profileImage) : null,
+                    backgroundImage: _profileImage.isNotEmpty ? CachedNetworkImageProvider(_profileImage) : null,
                     onBackgroundImageError: _profileImage.isNotEmpty ? (_, _) {} : null,
                     child: _profileImage.isEmpty
                         ? const Icon(Icons.person, size: 80, color: Color(0xFF0078FF))

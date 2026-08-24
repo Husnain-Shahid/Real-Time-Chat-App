@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CallsScreen extends StatelessWidget {
   const CallsScreen({super.key});
@@ -130,53 +131,55 @@ class CallsScreen extends StatelessWidget {
           ),
 
           // Calls List
-          ...recentCalls.map((call) => ListTile(
-            leading: CircleAvatar(
-              radius: 26,
-              backgroundColor: call['avatarUrl'] == null ? const Color(0xFF0078FF) : null,
-              backgroundImage: call['avatarUrl'] != null ? NetworkImage(call['avatarUrl']) : null,
-              child: call['avatarUrl'] == null
-                  ? Text(
-                call['name'][0],
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
-              )
-                  : null,
-            ),
-            title: Text(
-              call['name'],
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: call['missed'] ? Colors.red : Colors.black87,
+          ...recentCalls.map((call) => RepaintBoundary(
+            child: ListTile(
+              leading: CircleAvatar(
+                radius: 26,
+                backgroundColor: call['avatarUrl'] == null ? const Color(0xFF0078FF) : null,
+                backgroundImage: call['avatarUrl'] != null ? CachedNetworkImageProvider(call['avatarUrl']) : null,
+                child: call['avatarUrl'] == null
+                    ? Text(
+                  call['name'][0],
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+                )
+                    : null,
               ),
-            ),
-            subtitle: Padding(
-              padding: const EdgeInsets.only(top: 4.0),
-              child: Row(
-                children: [
-                  Icon(
-                    call['isIncoming'] ? Icons.call_received : Icons.call_made,
-                    size: 16,
-                    color: call['missed'] ? Colors.red : const Color(0xFF0078FF),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      call['time'],
-                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+              title: Text(
+                call['name'],
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: call['missed'] ? Colors.red : Colors.black87,
+                ),
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Row(
+                  children: [
+                    Icon(
+                      call['isIncoming'] ? Icons.call_received : Icons.call_made,
+                      size: 16,
+                      color: call['missed'] ? Colors.red : const Color(0xFF0078FF),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        call['time'],
+                        style: const TextStyle(color: Colors.grey, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            trailing: IconButton(
-              icon: Icon(
-                call['isVideo'] ? Icons.videocam : Icons.phone,
-                color: const Color(0xFF0078FF),
+              trailing: IconButton(
+                icon: Icon(
+                  call['isVideo'] ? Icons.videocam : Icons.phone,
+                  color: const Color(0xFF0078FF),
+                ),
+                onPressed: () {},
               ),
-              onPressed: () {},
+              onTap: () {},
             ),
-            onTap: () {},
           )),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/status_model.dart';
 import '../provider/status_provider.dart';
 
@@ -387,7 +388,7 @@ class _StatusViewerScreenState extends State<StatusViewerScreen> with SingleTick
                         CircleAvatar(
                           radius: 18,
                           backgroundColor: Colors.grey[700],
-                          backgroundImage: NetworkImage(_currentStatus.userImage),
+                          backgroundImage: _currentStatus.userImage.isNotEmpty ? CachedNetworkImageProvider(_currentStatus.userImage) : null,
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -518,16 +519,13 @@ class _StatusViewerScreenState extends State<StatusViewerScreen> with SingleTick
       return const Center(child: CircularProgressIndicator(color: Color(0xFF0078FF)));
     } else {
       return Center(
-        child: Image.network(
-          item.content,
+        child: CachedNetworkImage(
+          imageUrl: item.content,
           fit: BoxFit.contain,
           width: double.infinity,
           height: double.infinity,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return const Center(child: CircularProgressIndicator(color: Color(0xFF0078FF)));
-          },
-          errorBuilder: (context, error, stackTrace) => const Center(
+          placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: Color(0xFF0078FF))),
+          errorWidget: (context, url, error) => const Center(
             child: Icon(Icons.broken_image, color: Colors.white54, size: 48),
           ),
         ),

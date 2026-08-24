@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'auth_screen.dart';
 import 'edit_profile_screen.dart';
 
@@ -68,7 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                       CircleAvatar(
                         radius: 36,
                         backgroundColor: const Color(0xFFE5F1FF),
-                        backgroundImage: profileImage.isNotEmpty ? NetworkImage(profileImage) : null,
+                        backgroundImage: profileImage.isNotEmpty ? CachedNetworkImageProvider(profileImage) : null,
                         child: profileImage.isEmpty
                             ? const Icon(Icons.person, size: 40, color: Color(0xFF0078FF))
                             : null,
@@ -743,7 +744,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                                     radius: 50,
                                     backgroundColor: const Color(0xFFE5F1FF),
                                     backgroundImage: profileImage.isNotEmpty
-                                        ? NetworkImage(profileImage)
+                                        ? CachedNetworkImageProvider(profileImage)
                                         : null,
                                     onBackgroundImageError: profileImage.isNotEmpty ? (_, _) {} : null,
                                     child: profileImage.isEmpty

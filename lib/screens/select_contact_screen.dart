@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/chat_model.dart';
 import '../models/user_model.dart';
 import '../services/database_service.dart';
@@ -307,42 +308,44 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
                 )
               else
                 ...filteredContacts.map((contact) {
-                  return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                    leading: CircleAvatar(
-                      radius: 22,
-                      backgroundColor: Colors.grey[200],
-                      backgroundImage: contact.profileImage.isNotEmpty ? NetworkImage(contact.profileImage) : null,
-                      onBackgroundImageError: contact.profileImage.isNotEmpty ? (_, _) {} : null,
-                      child: contact.profileImage.isEmpty
-                          ? Text(
-                              contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '?',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 17,
-                                color: Color(0xFF0078FF),
-                              ),
-                            )
-                          : null,
-                    ),
-                    title: Text(
-                      contact.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.black87,
+                  return RepaintBoundary(
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                      leading: CircleAvatar(
+                        radius: 22,
+                        backgroundColor: Colors.grey[200],
+                        backgroundImage: contact.profileImage.isNotEmpty ? CachedNetworkImageProvider(contact.profileImage) : null,
+                        onBackgroundImageError: contact.profileImage.isNotEmpty ? (_, _) {} : null,
+                        child: contact.profileImage.isEmpty
+                            ? Text(
+                                contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '?',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 17,
+                                  color: Color(0xFF0078FF),
+                                ),
+                              )
+                            : null,
                       ),
-                    ),
-                    subtitle: Text(
-                      contact.about.isNotEmpty ? contact.about : 'Hey there! I am using WhatsApp.',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        color: Colors.grey[600],
+                      title: Text(
+                        contact.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
                       ),
+                      subtitle: Text(
+                        contact.about.isNotEmpty ? contact.about : 'Hey there! I am using WhatsApp.',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      onTap: () => _openChatWithUser(contact),
                     ),
-                    onTap: () => _openChatWithUser(contact),
                   );
                 }),
             ],

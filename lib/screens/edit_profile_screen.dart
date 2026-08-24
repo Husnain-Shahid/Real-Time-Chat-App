@@ -159,7 +159,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     _buildModalOption(
                       icon: Icons.camera_alt,
                       label: 'Camera',
-                      color: const Color(0xFF00A884),
+                      color: const Color(0xFF0078FF),
                       onTap: () {
                         Navigator.pop(ctx);
                         _pickAndUploadPhoto(true);
@@ -168,7 +168,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     _buildModalOption(
                       icon: Icons.photo_library,
                       label: 'Gallery',
-                      color: const Color(0xFF00A884),
+                      color: const Color(0xFF0078FF),
                       onTap: () {
                         Navigator.pop(ctx);
                         _pickAndUploadPhoto(false);
@@ -251,7 +251,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             maxLength: maxLength,
             decoration: InputDecoration(
               focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFF00A884), width: 2),
+                borderSide: BorderSide(color: Color(0xFF0078FF), width: 2),
               ),
             ),
           ),
@@ -262,7 +262,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00A884),
+                backgroundColor: const Color(0xFF0078FF),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () async {
@@ -310,7 +310,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.edit, color: Color(0xFF00A884)),
+                      icon: const Icon(Icons.edit, color: Color(0xFF0078FF)),
                       onPressed: () {
                         Navigator.pop(ctx);
                         _openEditDialog(
@@ -333,11 +333,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? const Color(0xFF00A884) : Colors.black87,
+                      color: isSelected ? const Color(0xFF0078FF) : Colors.black87,
                     ),
                   ),
                   trailing: isSelected
-                      ? const Icon(Icons.check, color: Color(0xFF00A884))
+                      ? const Icon(Icons.check, color: Color(0xFF0078FF))
                       : null,
                   onTap: () async {
                     Navigator.pop(ctx);
@@ -427,10 +427,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           TextButton(
             onPressed: _isSaving ? null : _saveAllChanges,
             child: _isSaving
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00A884)))
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0078FF)))
                 : const Text(
                     'Save',
-                    style: TextStyle(color: Color(0xFF00A884), fontWeight: FontWeight.bold, fontSize: 16),
+                    style: TextStyle(color: Color(0xFF0078FF), fontWeight: FontWeight.bold, fontSize: 16),
                   ),
           ),
         ],
@@ -446,11 +446,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 children: [
                   CircleAvatar(
                     radius: 75,
-                    backgroundColor: const Color(0xFFC7E8FA),
+                    backgroundColor: const Color(0xFFE5F1FF),
                     backgroundImage: _profileImage.isNotEmpty ? NetworkImage(_profileImage) : null,
                     onBackgroundImageError: _profileImage.isNotEmpty ? (_, _) {} : null,
                     child: _profileImage.isEmpty
-                        ? const Icon(Icons.person, size: 80, color: Color(0xFF008069))
+                        ? const Icon(Icons.person, size: 80, color: Color(0xFF0078FF))
                         : null,
                   ),
                   if (_isUploadingPhoto)
@@ -463,7 +463,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         child: Center(
                           child: CircularProgressIndicator(
                             value: _uploadProgress > 0 ? _uploadProgress : null,
-                            color: const Color(0xFF00A884),
+                            color: const Color(0xFF0078FF),
                           ),
                         ),
                       ),
@@ -476,7 +476,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: const BoxDecoration(
-                          color: Color(0xFF00A884),
+                          color: Color(0xFF0078FF),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
@@ -536,14 +536,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             // Chat ID / Unique ID Field
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-              leading: const Icon(Icons.alternate_email, color: Color(0xFF00A884), size: 24),
+              leading: const Icon(Icons.alternate_email, color: Color(0xFF0078FF), size: 24),
               title: const Text('Chat ID', style: TextStyle(fontSize: 13, color: Colors.grey)),
               subtitle: Text(
                 _uniqueId,
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
               trailing: IconButton(
-                icon: const Icon(Icons.copy, color: Color(0xFF00A884), size: 20),
+                icon: const Icon(Icons.copy, color: Color(0xFF0078FF), size: 20),
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: _uniqueId));
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -607,7 +607,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ],
               ),
             ),
-            const Icon(Icons.edit, size: 18, color: Color(0xFF00A884)),
+            const Icon(Icons.edit, size: 18, color: Color(0xFF0078FF)),
           ],
         ),
       ),

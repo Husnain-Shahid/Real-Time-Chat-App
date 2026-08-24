@@ -189,7 +189,7 @@ class _AddGroupMembersScreenState extends State<AddGroupMembersScreen> {
                                   children: [
                                     CircleAvatar(
                                       radius: 24,
-                                      backgroundColor: const Color(0xFF00A884).withValues(alpha: 0.15),
+                                      backgroundColor: const Color(0xFF0078FF).withValues(alpha: 0.15),
                                       backgroundImage: member.profileImage.isNotEmpty
                                           ? NetworkImage(member.profileImage)
                                           : null,
@@ -201,7 +201,7 @@ class _AddGroupMembersScreenState extends State<AddGroupMembersScreen> {
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 18,
-                                                color: Color(0xFF00A884),
+                                                color: Color(0xFF0078FF),
                                               ),
                                             )
                                           : null,
@@ -281,7 +281,7 @@ class _AddGroupMembersScreenState extends State<AddGroupMembersScreen> {
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 18,
-                                                color: Color(0xFF00A884),
+                                                color: Color(0xFF0078FF),
                                               ),
                                             )
                                           : null,
@@ -292,7 +292,7 @@ class _AddGroupMembersScreenState extends State<AddGroupMembersScreen> {
                                         bottom: 0,
                                         child: Container(
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF00A884),
+                                            color: const Color(0xFF0078FF),
                                             shape: BoxShape.circle,
                                             border: Border.all(color: Colors.white, width: 2),
                                           ),
@@ -317,7 +317,7 @@ class _AddGroupMembersScreenState extends State<AddGroupMembersScreen> {
                                   style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                                 ),
                                 trailing: isSelected
-                                    ? const Icon(Icons.check_circle, color: Color(0xFF00A884), size: 24)
+                                    ? const Icon(Icons.check_circle, color: Color(0xFF0078FF), size: 24)
                                     : Icon(Icons.circle_outlined, color: Colors.grey.shade400, size: 24),
                               );
                             },
@@ -330,7 +330,7 @@ class _AddGroupMembersScreenState extends State<AddGroupMembersScreen> {
                 Container(
                   color: Colors.black38,
                   child: const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF00A884)),
+                    child: CircularProgressIndicator(color: Color(0xFF0078FF)),
                   ),
                 ),
             ],
@@ -338,7 +338,7 @@ class _AddGroupMembersScreenState extends State<AddGroupMembersScreen> {
           floatingActionButton: _selectedMembers.isNotEmpty && !_isAdding
               ? FloatingActionButton(
                   heroTag: 'confirm_add_members_fab',
-                  backgroundColor: const Color(0xFF00A884),
+                  backgroundColor: const Color(0xFF0078FF),
                   elevation: 4,
                   onPressed: _confirmAddMembers,
                   child: const Icon(Icons.check, color: Colors.white, size: 28),

@@ -290,7 +290,7 @@ class _StatusViewerScreenState extends State<StatusViewerScreen> with SingleTick
     if (item == null) {
       return const Scaffold(
         backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: Color(0xFF25D366))),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF0078FF))),
       );
     }
 
@@ -515,7 +515,7 @@ class _StatusViewerScreenState extends State<StatusViewerScreen> with SingleTick
           ),
         );
       }
-      return const Center(child: CircularProgressIndicator(color: Color(0xFF25D366)));
+      return const Center(child: CircularProgressIndicator(color: Color(0xFF0078FF)));
     } else {
       return Center(
         child: Image.network(
@@ -525,7 +525,7 @@ class _StatusViewerScreenState extends State<StatusViewerScreen> with SingleTick
           height: double.infinity,
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) return child;
-            return const Center(child: CircularProgressIndicator(color: Color(0xFF25D366)));
+            return const Center(child: CircularProgressIndicator(color: Color(0xFF0078FF)));
           },
           errorBuilder: (context, error, stackTrace) => const Center(
             child: Icon(Icons.broken_image, color: Colors.white54, size: 48),

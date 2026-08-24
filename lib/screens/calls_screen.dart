@@ -133,7 +133,7 @@ class CallsScreen extends StatelessWidget {
           ...recentCalls.map((call) => ListTile(
             leading: CircleAvatar(
               radius: 26,
-              backgroundColor: call['avatarUrl'] == null ? const Color(0xFF075E54) : null,
+              backgroundColor: call['avatarUrl'] == null ? const Color(0xFF0078FF) : null,
               backgroundImage: call['avatarUrl'] != null ? NetworkImage(call['avatarUrl']) : null,
               child: call['avatarUrl'] == null
                   ? Text(
@@ -157,7 +157,7 @@ class CallsScreen extends StatelessWidget {
                   Icon(
                     call['isIncoming'] ? Icons.call_received : Icons.call_made,
                     size: 16,
-                    color: call['missed'] ? Colors.red : const Color(0xFF25D366),
+                    color: call['missed'] ? Colors.red : const Color(0xFF0078FF),
                   ),
                   const SizedBox(width: 6),
                   Expanded(
@@ -172,7 +172,7 @@ class CallsScreen extends StatelessWidget {
             trailing: IconButton(
               icon: Icon(
                 call['isVideo'] ? Icons.videocam : Icons.phone,
-                color: const Color(0xFF075E54),
+                color: const Color(0xFF0078FF),
               ),
               onPressed: () {},
             ),
@@ -181,7 +181,7 @@ class CallsScreen extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF25D366),
+        backgroundColor: const Color(0xFF0078FF),
         child: const Icon(Icons.add_call, color: Colors.white),
         onPressed: () {},
       ),
@@ -206,7 +206,7 @@ class _CallActionButton extends StatelessWidget {
             color: const Color(0xFFF0F2F5),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: const Color(0xFF075E54), size: 22),
+          child: Icon(icon, color: const Color(0xFF0078FF), size: 22),
         ),
         const SizedBox(height: 6),
         Text(

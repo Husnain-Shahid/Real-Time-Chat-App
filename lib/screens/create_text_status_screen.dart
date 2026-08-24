@@ -14,15 +14,15 @@ class _CreateTextStatusScreenState extends State<CreateTextStatusScreen> {
   final FocusNode _focusNode = FocusNode();
 
   static const List<int> _backgroundColors = [
-    0xFF005C4B, // WhatsApp Dark Green
-    0xFF128C7E, // WhatsApp Teal
+    0xFF0078FF, // Messenger Blue
+    0xFF0A66C2, // LinkedIn / Royal Blue
     0xFF5B397D, // Purple
     0xFFD9534F, // Crimson
     0xFFE67E22, // Orange
-    0xFF2980B9, // Blue
+    0xFF2980B9, // Sky Blue
     0xFF34495E, // Dark Slate
     0xFF8E44AD, // Deep Purple
-    0xFF16A085, // Emerald
+    0xFF0288D1, // Cyan Blue
     0xFFC0392B, // Red
   ];
 
@@ -183,7 +183,7 @@ class _CreateTextStatusScreenState extends State<CreateTextStatusScreen> {
               child: Align(
                 alignment: Alignment.bottomRight,
                 child: FloatingActionButton(
-                  backgroundColor: const Color(0xFF25D366),
+                  backgroundColor: const Color(0xFF0078FF),
                   foregroundColor: Colors.white,
                   elevation: 4,
                   onPressed: statusProvider.isUploading || _textController.text.trim().isEmpty

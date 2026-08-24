@@ -35,7 +35,6 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   static const List<Widget> _screens = [
     ChatHomeView(),
     UpdatesScreen(),
-    PlaceholderScreen(title: 'Communities'),
     CallsScreen(),
     ProfileScreen(),
   ];
@@ -235,11 +234,11 @@ class _ChatHomeViewState extends State<ChatHomeView> with AutomaticKeepAliveClie
               backgroundColor: Colors.white,
               elevation: 0,
               title: const Text(
-                'WhatsApp',
+                'Chattrix',
                 style: TextStyle(
-                  color: Color(0xFF25D366),
+                  color: Color(0xFF0078FF),
                   fontWeight: FontWeight.bold,
-                  fontSize: 24,
+                  fontSize: 26,
                   letterSpacing: -0.5,
                 ),
               ),
@@ -301,7 +300,6 @@ class _ChatHomeViewState extends State<ChatHomeView> with AutomaticKeepAliveClie
               ),
             ),
           ),
-
           // Filter Chips (All, Unread, Favorites, Groups)
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -354,7 +352,7 @@ class _ChatHomeViewState extends State<ChatHomeView> with AutomaticKeepAliveClie
           // Chat List View
           Expanded(
             child: homeProvider.isLoading
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF25D366)))
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF0078FF)))
                 : homeProvider.chatDocs.isEmpty
                     ? Center(
                         child: Padding(
@@ -415,7 +413,9 @@ class _ChatHomeViewState extends State<ChatHomeView> with AutomaticKeepAliveClie
                           final lastMessageText = chatRoomData['lastMessage'] ?? 'Tap to chat';
                           final dynamic timestamp = chatRoomData['lastMessageTimestamp'];
                           final timeText = _formatChatTime(timestamp, chatRoomData['lastMessageTime'] ?? '');
-                          final isMe = chatRoomData['lastMessageSenderId'] == currentUserId;
+                          final lastSenderId = chatRoomData['lastSenderId'] ?? '';
+                          final isMe = lastSenderId == currentUserId;
+                          final isLastMessageRead = chatRoomData['isLastMessageRead'] ?? true;
 
                           final chat = ChatModel(
                             id: receiverId,
@@ -424,14 +424,11 @@ class _ChatHomeViewState extends State<ChatHomeView> with AutomaticKeepAliveClie
                             lastMessage: lastMessageText,
                             time: timeText,
                             avatarUrl: avatarUrl,
-                            isGroup: isGroup,
                             unreadCount: unreadCount,
-                            isUnread: unreadCount > 0,
+                            isGroup: isGroup,
                           );
 
-                          final isSelected = isSelecting && homeProvider.selectedChatRoomId == chatRoomDoc.id;
-                          final int receiverUnread = (chatRoomData['unreadCount_$receiverId'] as num?)?.toInt() ?? 0;
-                          final bool isLastMessageRead = receiverUnread == 0;
+                          final isSelected = homeProvider.selectedChatRoomId == chatRoomDoc.id;
 
                           return _ChatListTile(
                             chat: chat,
@@ -444,7 +441,7 @@ class _ChatHomeViewState extends State<ChatHomeView> with AutomaticKeepAliveClie
                               homeProvider.selectChat(chatRoomDoc.id);
                             },
                             onTap: () {
-                              if (isSelecting) {
+                              if (homeProvider.isSelectingChat) {
                                 if (isSelected) {
                                   homeProvider.clearChatSelection();
                                 } else {
@@ -477,33 +474,12 @@ class _ChatHomeViewState extends State<ChatHomeView> with AutomaticKeepAliveClie
           : Column(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                // Meta AI Floating Action Icon
-                // Container(
-                //   width: 44,
-                //   height: 44,
-                //   decoration: BoxDecoration(
-                //     color: const Color(0xFFF0F2F5),
-                //     borderRadius: BorderRadius.circular(12),
-                //     boxShadow: [
-                //       BoxShadow(
-                //         color: Colors.black.withValues(alpha: 0.08),
-                //         blurRadius: 4,
-                //         offset: const Offset(0, 2),
-                //       ),
-                //     ],
-                //   ),
-                //   child: IconButton(
-                //     padding: EdgeInsets.zero,
-                //     icon: const Icon(Icons.auto_awesome, color: Colors.purple, size: 22),
-                //     onPressed: () {},
-                //   ),
-                // ),
                 const SizedBox(height: 12),
                 // New Message FAB
                 FloatingActionButton(
                   heroTag: 'new_chat_fab',
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  backgroundColor: const Color(0xFF25D366),
+                  backgroundColor: const Color(0xFF0078FF),
                   elevation: 4,
                   onPressed: () {
                     Navigator.push(
@@ -628,13 +604,13 @@ class _ChatHomeViewState extends State<ChatHomeView> with AutomaticKeepAliveClie
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFD8F3DC) : const Color(0xFFF0F2F5),
+            color: isSelected ? const Color(0xFFE5F1FF) : const Color(0xFFF0F2F5),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? const Color(0xFF075E54) : Colors.black87,
+              color: isSelected ? const Color(0xFF0078FF) : Colors.black87,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               fontSize: 13.5,
             ),
@@ -671,7 +647,7 @@ class _ChatListTile extends StatelessWidget {
     final bool hasUnread = unreadCount > 0;
 
     return Container(
-      color: isSelected ? const Color(0xFFE8F5E9) : Colors.transparent,
+      color: isSelected ? const Color(0xFFE5F1FF) : Colors.transparent,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         onTap: onTap,
@@ -680,15 +656,15 @@ class _ChatListTile extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 26,
-              backgroundColor: Colors.grey[200],
+              backgroundColor: const Color(0xFFE5F1FF),
               backgroundImage: chat.avatarUrl.isNotEmpty ? NetworkImage(chat.avatarUrl) : null,
               onBackgroundImageError: chat.avatarUrl.isNotEmpty ? (_, _) {} : null,
               child: chat.avatarUrl.isEmpty
                   ? (chat.isGroup
-                      ? const Icon(Icons.groups, size: 28, color: Color(0xFF00A884))
+                      ? const Icon(Icons.groups, size: 28, color: Color(0xFF0078FF))
                       : Text(
                           chat.name.isNotEmpty ? chat.name[0].toUpperCase() : '?',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF075E54)),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF0078FF)),
                         ))
                   : null,
             ),
@@ -699,7 +675,7 @@ class _ChatListTile extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: const BoxDecoration(
-                    color: Color(0xFF00A884),
+                    color: Color(0xFF0078FF),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.check, size: 14, color: Colors.white),
@@ -724,7 +700,7 @@ class _ChatListTile extends StatelessWidget {
                 Icon(
                   Icons.done_all,
                   size: 16,
-                  color: isLastMessageRead ? const Color(0xFF53BDEB) : const Color(0xFF8696A0),
+                  color: isLastMessageRead ? const Color(0xFF0078FF) : const Color(0xFF8696A0),
                 ),
                 const SizedBox(width: 4),
               ],
@@ -753,7 +729,7 @@ class _ChatListTile extends StatelessWidget {
               chat.time,
               style: TextStyle(
                 fontSize: 12,
-                color: hasUnread ? const Color(0xFF25D366) : Colors.grey[600],
+                color: hasUnread ? const Color(0xFF0078FF) : Colors.grey[600],
                 fontWeight: hasUnread ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -762,7 +738,7 @@ class _ChatListTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6.5, vertical: 2.5),
                 decoration: const BoxDecoration(
-                  color: Color(0xFF25D366),
+                  color: Color(0xFF0078FF),
                   shape: BoxShape.circle,
                 ),
                 child: Text(

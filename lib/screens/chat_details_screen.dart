@@ -119,7 +119,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
             return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF00A884)),
+              child: CircularProgressIndicator(color: Color(0xFF0078FF)),
             );
           }
 
@@ -131,7 +131,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
           final String contactName = userData['name'] ?? 'Contact';
           final String phoneNumber = userData['phoneNumber'] ?? userData['email'] ?? '+92 340 3912622';
           final String avatarUrl = userData['profileImage'] ?? '';
-          final String aboutText = userData['about'] ?? 'Hey there! I am using WhatsApp.';
+          final String aboutText = userData['about'] ?? 'Hey there! I am using Messenger.';
 
           final String initials = contactName.isNotEmpty
               ? contactName.trim().split(' ').map((e) => e.isNotEmpty ? e[0].toUpperCase() : '').take(2).join()
@@ -145,7 +145,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
                   children: [
                     CircleAvatar(
                       radius: 56,
-                      backgroundColor: const Color(0xFFC7E8FA),
+                      backgroundColor: const Color(0xFFE5F1FF),
                       backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
                       onBackgroundImageError: avatarUrl.isNotEmpty ? (_, _) {} : null,
                       child: avatarUrl.isEmpty
@@ -154,7 +154,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
                               style: const TextStyle(
                                 fontSize: 44,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF008069),
+                                color: Color(0xFF0078FF),
                               ),
                             )
                           : null,
@@ -352,7 +352,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
                 subtitle: Text(_isMuted ? 'Muted' : 'Default', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
                 trailing: Switch(
                   value: !_isMuted,
-                  activeThumbColor: const Color(0xFF00A884),
+                  activeThumbColor: const Color(0xFF0078FF),
                   onChanged: (val) {
                     setState(() {
                       _isMuted = !val;
@@ -420,7 +420,7 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
                           width: 44,
                           height: 44,
                           decoration: const BoxDecoration(
-                            color: Color(0xFF00A884),
+                            color: Color(0xFF0078FF),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.group_add, color: Colors.white, size: 20),
@@ -456,11 +456,11 @@ class _ChatDetailsScreenState extends State<ChatDetailsScreen> {
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                           leading: CircleAvatar(
                             radius: 22,
-                            backgroundColor: const Color(0xFFC7E8FA),
+                            backgroundColor: const Color(0xFFE5F1FF),
                             backgroundImage: gImage.isNotEmpty ? NetworkImage(gImage) : null,
                             onBackgroundImageError: gImage.isNotEmpty ? (_, _) {} : null,
                             child: gImage.isEmpty
-                                ? const Icon(Icons.groups, size: 24, color: Color(0xFF008069))
+                                ? const Icon(Icons.groups, size: 24, color: Color(0xFF0078FF))
                                 : null,
                           ),
                           title: Text(

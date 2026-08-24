@@ -208,10 +208,10 @@ class _AuthScreenState extends State<AuthScreen> {
                         Icon(
                           Icons.message_rounded,
                           size: 40,
-                          color: Color(0xFF00A884),
+                          color: Color(0xFF0078FF),
                         ),
                         Text(
-                          'Techaxe Chat',
+                          ' Chattrix',
                           style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
@@ -247,7 +247,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             child: Container(
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                color: isLoginSelected ? const Color(0xFF00A884) : Colors.transparent,
+                                color: isLoginSelected ? const Color(0xFF0078FF) : Colors.transparent,
                                 borderRadius: BorderRadius.circular(26),
                               ),
                               child: Text(
@@ -272,7 +272,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             child: Container(
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                color: !isLoginSelected ? const Color(0xFF00A884) : Colors.transparent,
+                                color: !isLoginSelected ? const Color(0xFF0078FF) : Colors.transparent,
                                 borderRadius: BorderRadius.circular(26),
                               ),
                               child: Text(
@@ -401,7 +401,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       child: const Text(
                         'Forgot Password?',
                         style: TextStyle(
-                          color: Color(0xFF00A884),
+                          color: Color(0xFF0078FF),
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
@@ -416,7 +416,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         width: 24,
                         child: Checkbox(
                           value: _agreeToTerms,
-                          activeColor: const Color(0xFF00A884),
+                          activeColor: const Color(0xFF0078FF),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                           onChanged: (val) => setState(() => _agreeToTerms = val ?? false),
                         ),
@@ -431,7 +431,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         child: const Text(
                           'Terms & Privacy Policy.',
                           style: TextStyle(
-                            color: Color(0xFF00A884),
+                            color: Color(0xFF0078FF),
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
                           ),
@@ -450,13 +450,13 @@ class _AuthScreenState extends State<AuthScreen> {
                   height: 52,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00A884),
+                      backgroundColor: const Color(0xFF0078FF),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
                       elevation: 2,
-                      shadowColor: const Color(0xFF00A884).withOpacity(0.4),
+                      shadowColor: const Color(0xFF0078FF).withOpacity(0.4),
                     ),
                     onPressed: _isLoading ? null : _submitForm,
                     child: _isLoading
@@ -542,7 +542,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       child: Text(
                         isLoginSelected ? 'Sign up' : 'Log in',
                         style: const TextStyle(
-                          color: Color(0xFF00A884),
+                          color: Color(0xFF0078FF),
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
@@ -605,7 +605,7 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFF00A884), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFF0078FF), width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),

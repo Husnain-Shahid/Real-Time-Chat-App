@@ -84,7 +84,7 @@ class _StatusMediaPreviewScreenState extends State<StatusMediaPreviewScreen> {
                           child: VideoPlayer(_videoController!),
                         )
                       : const Center(
-                          child: CircularProgressIndicator(color: Color(0xFF25D366)),
+                          child: CircularProgressIndicator(color: Color(0xFF0078FF)),
                         ))
                   : Image.file(
                       widget.file,
@@ -153,7 +153,7 @@ class _StatusMediaPreviewScreenState extends State<StatusMediaPreviewScreen> {
                           children: [
                             LinearProgressIndicator(
                               value: statusProvider.uploadProgress > 0 ? statusProvider.uploadProgress : null,
-                              color: const Color(0xFF25D366),
+                              color: const Color(0xFF0078FF),
                               backgroundColor: Colors.white24,
                             ),
                             const SizedBox(height: 6),
@@ -188,7 +188,7 @@ class _StatusMediaPreviewScreenState extends State<StatusMediaPreviewScreen> {
                         const SizedBox(width: 8),
                         FloatingActionButton(
                           mini: true,
-                          backgroundColor: const Color(0xFF25D366),
+                          backgroundColor: const Color(0xFF0078FF),
                           foregroundColor: Colors.white,
                           onPressed: statusProvider.isUploading ? null : _publishStatus,
                           child: statusProvider.isUploading

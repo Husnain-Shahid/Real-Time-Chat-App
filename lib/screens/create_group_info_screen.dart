@@ -202,6 +202,10 @@ class _CreateGroupInfoScreenState extends State<CreateGroupInfoScreen> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         elevation: 0.5,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -247,7 +251,7 @@ class _CreateGroupInfoScreenState extends State<CreateGroupInfoScreen> {
                         hintText: 'Type group subject here...',
                         hintStyle: TextStyle(color: Colors.black38, fontSize: 15.5),
                         focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF00A884), width: 2),
+                          borderSide: BorderSide(color: Color(0xFF0078FF), width: 2),
                         ),
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: Colors.black26),
@@ -292,13 +296,13 @@ class _CreateGroupInfoScreenState extends State<CreateGroupInfoScreen> {
                     children: [
                       CircleAvatar(
                         radius: 26,
-                        backgroundColor: const Color(0xFF00A884).withValues(alpha: 0.15),
+                        backgroundColor: const Color(0xFF0078FF).withValues(alpha: 0.15),
                         child: Text(
                           currentUserName.isNotEmpty ? currentUserName[0].toUpperCase() : 'Y',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
-                            color: Color(0xFF00A884),
+                            color: Color(0xFF0078FF),
                           ),
                         ),
                       ),
@@ -334,7 +338,7 @@ class _CreateGroupInfoScreenState extends State<CreateGroupInfoScreen> {
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 18,
-                                    color: Color(0xFF00A884),
+                                    color: Color(0xFF0078FF),
                                   ),
                                 )
                               : null,
@@ -365,7 +369,7 @@ class _CreateGroupInfoScreenState extends State<CreateGroupInfoScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(color: Color(0xFF00A884)),
+                    CircularProgressIndicator(color: Color(0xFF0078FF)),
                     SizedBox(height: 16),
                     Text(
                       'Creating group...',
@@ -381,7 +385,7 @@ class _CreateGroupInfoScreenState extends State<CreateGroupInfoScreen> {
           ? null
           : FloatingActionButton(
               heroTag: 'create_group_confirm_fab',
-              backgroundColor: const Color(0xFF00A884),
+              backgroundColor: const Color(0xFF0078FF),
               elevation: 4,
               onPressed: _createGroup,
               child: const Icon(Icons.check, color: Colors.white, size: 28),

@@ -149,13 +149,17 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF0F2F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF00A884),
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text(
           'Add New Contact',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 19, color: Colors.black87),
         ),
-        elevation: 0,
+        elevation: 0.5,
       ),
       body: Column(
         children: [
@@ -199,7 +203,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 _hasSearched = false;
                               });
                             },
-                            child: const Icon(Icons.clear, color: Colors.black45, size: 18),
+                            child: const Icon(Icons.close, color: Colors.black45, size: 18),
                           ),
                       ],
                     ),
@@ -208,7 +212,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 const SizedBox(width: 10),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00A884),
+                    backgroundColor: const Color(0xFF0078FF),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
@@ -228,7 +232,7 @@ class _SearchScreenState extends State<SearchScreen> {
           Expanded(
             child: _isLoading
                 ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF00A884)),
+                    child: CircularProgressIndicator(color: Color(0xFF0078FF)),
                   )
                 : _searchResults.isNotEmpty
                     ? ListView.builder(
@@ -248,7 +252,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 children: [
                                    CircleAvatar(
                                     radius: 28,
-                                    backgroundColor: const Color(0xFF00A884).withValues(alpha: 0.12),
+                                    backgroundColor: const Color(0xFF0078FF).withValues(alpha: 0.12),
                                     backgroundImage: user.profileImage.isNotEmpty
                                         ? NetworkImage(user.profileImage)
                                         : null,
@@ -259,7 +263,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                             style: const TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 22,
-                                              color: Color(0xFF00A884),
+                                              color: Color(0xFF0078FF),
                                             ),
                                           )
                                         : null,
@@ -282,7 +286,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                           user.uniqueId.isNotEmpty ? 'ID: ${user.uniqueId}' : user.email,
                                           style: const TextStyle(
                                             fontSize: 13,
-                                            color: Color(0xFF00A884),
+                                            color: Color(0xFF0078FF),
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -306,9 +310,9 @@ class _SearchScreenState extends State<SearchScreen> {
                                       // Add Contact Toggle Button
                                       OutlinedButton.icon(
                                         style: OutlinedButton.styleFrom(
-                                          foregroundColor: isContact ? const Color(0xFF00A884) : Colors.black87,
+                                          foregroundColor: isContact ? const Color(0xFF0078FF) : Colors.black87,
                                           side: BorderSide(
-                                            color: isContact ? const Color(0xFF00A884) : Colors.grey.shade400,
+                                            color: isContact ? const Color(0xFF0078FF) : Colors.grey.shade400,
                                           ),
                                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -317,7 +321,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                         icon: Icon(
                                           isContact ? Icons.check : Icons.person_add_alt_1,
                                           size: 16,
-                                          color: isContact ? const Color(0xFF00A884) : Colors.black87,
+                                          color: isContact ? const Color(0xFF0078FF) : Colors.black87,
                                         ),
                                         label: Text(
                                           isContact ? 'Added' : 'Add',
@@ -334,7 +338,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF25D366),
+                                            color: const Color(0xFF0078FF),
                                             borderRadius: BorderRadius.circular(16),
                                           ),
                                           child: const Row(

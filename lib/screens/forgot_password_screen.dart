@@ -56,7 +56,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 child: Icon(
                   Icons.lock_reset_rounded,
                   size: 64,
-                  color: Color(0xFF00A884),
+                  color: Color(0xFF0078FF),
                 ),
               ),
               const SizedBox(height: 20),
@@ -86,13 +86,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00A884).withOpacity(0.1),
+                    color: const Color(0xFF0078FF).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFF00A884)),
+                    border: Border.all(color: const Color(0xFF0078FF)),
                   ),
                   child: Row(
                     children: const [
-                      Icon(Icons.check_circle_rounded, color: Color(0xFF00A884), size: 24),
+                      Icon(Icons.check_circle_rounded, color: Color(0xFF0078FF), size: 24),
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -131,7 +131,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: Color(0xFF00A884), width: 1.5),
+                    borderSide: const BorderSide(color: Color(0xFF0078FF), width: 1.5),
                   ),
                 ),
               ),
@@ -142,7 +142,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 height: 52,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00A884),
+                    backgroundColor: const Color(0xFF0078FF),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -173,7 +173,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     child: const Text(
                       'Log in',
                       style: TextStyle(
-                        color: Color(0xFF00A884),
+                        color: Color(0xFF0078FF),
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
                       ),

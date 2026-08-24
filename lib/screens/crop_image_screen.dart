@@ -145,7 +145,7 @@ class _CropImageScreenState extends State<CropImageScreen> {
                 height: cropBoxSize,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF00A884), width: 2),
+                  border: Border.all(color: const Color(0xFF0078FF), width: 2),
                 ),
               ),
             ),
@@ -171,7 +171,7 @@ class _CropImageScreenState extends State<CropImageScreen> {
                   ),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00A884),
+                      backgroundColor: const Color(0xFF0078FF),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     ),

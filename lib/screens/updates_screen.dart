@@ -92,7 +92,7 @@ class _UpdatesScreenState extends State<UpdatesScreen> with AutomaticKeepAliveCl
                 ),
                 _buildOptionItem(
                   icon: Icons.edit,
-                  color: const Color(0xFF075E54),
+                  color: const Color(0xFF0078FF),
                   label: 'Text Status',
                   onTap: () {
                     Navigator.pop(ctx);
@@ -341,7 +341,7 @@ class _UpdatesScreenState extends State<UpdatesScreen> with AutomaticKeepAliveCl
           FloatingActionButton(
             heroTag: 'camera_update',
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            backgroundColor: const Color(0xFF25D366),
+            backgroundColor: const Color(0xFF0078FF),
             elevation: 4,
             onPressed: () => _showMediaPickerOptions(context),
             child: const Icon(Icons.camera_alt, color: Colors.white, size: 26),
@@ -378,7 +378,7 @@ class _UpdatesScreenState extends State<UpdatesScreen> with AutomaticKeepAliveCl
               right: -1,
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF25D366),
+                  color: const Color(0xFF0078FF),
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 2),
                 ),
@@ -547,7 +547,7 @@ class _SegmentedRingPainter extends CustomPainter {
     if (count == 1) {
       paint.color = (viewedList.isNotEmpty && viewedList.first)
           ? Colors.grey.shade400
-          : const Color(0xFF25D366);
+          : const Color(0xFF0078FF);
       canvas.drawCircle(center, radius, paint);
       return;
     }
@@ -562,7 +562,7 @@ class _SegmentedRingPainter extends CustomPainter {
 
     for (int i = 0; i < count; i++) {
       final isViewed = (i < viewedList.length) ? viewedList[i] : false;
-      paint.color = isViewed ? Colors.grey.shade400 : const Color(0xFF25D366);
+      paint.color = isViewed ? Colors.grey.shade400 : const Color(0xFF0078FF);
 
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),

@@ -221,13 +221,13 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   leading: CircleAvatar(
                     radius: 22,
-                    backgroundColor: const Color(0xFF00A884).withValues(alpha: 0.15),
+                    backgroundColor: const Color(0xFF0078FF).withValues(alpha: 0.15),
                     child: Text(
                       selfName.isNotEmpty ? selfName[0].toUpperCase() : 'Y',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 17,
-                        color: Color(0xFF00A884),
+                        color: Color(0xFF0078FF),
                       ),
                     ),
                   ),
@@ -278,7 +278,7 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF25D366),
+                          backgroundColor: const Color(0xFF0078FF),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -320,7 +320,7 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 17,
-                                color: Color(0xFF00A884),
+                                color: Color(0xFF0078FF),
                               ),
                             )
                           : null,
@@ -363,7 +363,7 @@ class _SelectContactScreenState extends State<SelectContactScreen> {
       onTap: onTap,
       leading: CircleAvatar(
         radius: 22,
-        backgroundColor: const Color(0xFF00A884),
+        backgroundColor: const Color(0xFF0078FF),
         child: Icon(icon, color: Colors.white, size: 22),
       ),
       title: Text(

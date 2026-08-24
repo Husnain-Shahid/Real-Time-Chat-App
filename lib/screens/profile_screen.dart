@@ -59,18 +59,18 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF0FDF4),
+                    color: const Color(0xFFE5F1FF),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFF00A884).withValues(alpha: 0.2), width: 1.5),
+                    border: Border.all(color: const Color(0xFF0078FF).withValues(alpha: 0.2), width: 1.5),
                   ),
                   child: Column(
                     children: [
                       CircleAvatar(
                         radius: 36,
-                        backgroundColor: const Color(0xFFC7E8FA),
+                        backgroundColor: const Color(0xFFE5F1FF),
                         backgroundImage: profileImage.isNotEmpty ? NetworkImage(profileImage) : null,
                         child: profileImage.isEmpty
-                            ? const Icon(Icons.person, size: 40, color: Color(0xFF008069))
+                            ? const Icon(Icons.person, size: 40, color: Color(0xFF0078FF))
                             : null,
                       ),
                       const SizedBox(height: 12),
@@ -80,7 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'WhatsApp Contact',
+                        'Messenger Contact',
                         style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                       ),
                       const SizedBox(height: 20),
@@ -101,7 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                         ),
                         child: Column(
                           children: [
-                            const Icon(Icons.qr_code_2, size: 180, color: Color(0xFF075E54)),
+                            const Icon(Icons.qr_code_2, size: 180, color: Color(0xFF0078FF)),
                             const SizedBox(height: 8),
                             Text(
                               uniqueId,
@@ -109,7 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1.2,
-                                color: Color(0xFF00A884),
+                                color: Color(0xFF0078FF),
                               ),
                             ),
                           ],
@@ -127,8 +127,8 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                         ),
-                        icon: const Icon(Icons.copy, color: Color(0xFF00A884), size: 18),
-                        label: const Text('Copy ID', style: TextStyle(color: Color(0xFF00A884))),
+                        icon: const Icon(Icons.copy, color: Color(0xFF0078FF), size: 18),
+                        label: const Text('Copy ID', style: TextStyle(color: Color(0xFF0078FF))),
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: uniqueId));
                           Navigator.pop(ctx);
@@ -142,7 +142,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                     Expanded(
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00A884),
+                          backgroundColor: const Color(0xFF0078FF),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                         ),
@@ -233,7 +233,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                     title: const Text('Read receipts', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
                     subtitle: const Text('If turned off, you won\'t send or receive Read receipts', style: TextStyle(fontSize: 12, color: Colors.grey)),
                     value: _readReceipts,
-                    activeThumbColor: const Color(0xFF00A884),
+                    activeThumbColor: const Color(0xFF0078FF),
                     onChanged: (val) {
                       setModalState(() => _readReceipts = val);
                       setState(() => _readReceipts = val);
@@ -310,7 +310,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                 title: Text(theme),
                 leading: Icon(
                   _selectedTheme == theme ? Icons.radio_button_checked : Icons.radio_button_off,
-                  color: _selectedTheme == theme ? const Color(0xFF00A884) : Colors.grey,
+                  color: _selectedTheme == theme ? const Color(0xFF0078FF) : Colors.grey,
                 ),
                 onTap: () {
                   setState(() => _selectedTheme = theme);
@@ -345,7 +345,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                 title: Text(lang),
                 leading: Icon(
                   _selectedLanguage == lang ? Icons.radio_button_checked : Icons.radio_button_off,
-                  color: _selectedLanguage == lang ? const Color(0xFF00A884) : Colors.grey,
+                  color: _selectedLanguage == lang ? const Color(0xFF0078FF) : Colors.grey,
                 ),
                 onTap: () {
                   setState(() => _selectedLanguage = lang);
@@ -426,7 +426,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                     title: const Text('Conversation tones', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
                     subtitle: const Text('Play sounds for incoming and outgoing messages', style: TextStyle(fontSize: 12, color: Colors.grey)),
                     value: _conversationTones,
-                    activeThumbColor: const Color(0xFF00A884),
+                    activeThumbColor: const Color(0xFF0078FF),
                     onChanged: (val) {
                       setModalState(() => _conversationTones = val);
                       setState(() => _conversationTones = val);
@@ -438,7 +438,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                     title: const Text('High priority notifications', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
                     subtitle: const Text('Show previews of notifications at top of the screen', style: TextStyle(fontSize: 12, color: Colors.grey)),
                     value: _highPriorityNotifications,
-                    activeThumbColor: const Color(0xFF00A884),
+                    activeThumbColor: const Color(0xFF0078FF),
                     onChanged: (val) {
                       setModalState(() => _highPriorityNotifications = val);
                       setState(() => _highPriorityNotifications = val);
@@ -478,14 +478,14 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
               _buildSheetItem(
                 icon: Icons.info_outline,
                 title: 'App info',
-                subtitle: 'WhatsApp Messenger Version 2.26.1',
+                subtitle: 'Chattrix Version 2.26.1',
                 onTap: () {
                   Navigator.pop(ctx);
                   showAboutDialog(
                     context: context,
-                    applicationName: 'Techaxe Chat',
+                    applicationName: 'Chattrix',
                     applicationVersion: '2.26.1',
-                    applicationIcon: const Icon(Icons.chat, color: Color(0xFF00A884), size: 40),
+                    applicationIcon: const Icon(Icons.chat, color: Color(0xFF0078FF), size: 40),
                     children: const [
                       Text('A complete real-time messaging application built with Flutter, Firebase, and Cloudinary.'),
                     ],
@@ -620,7 +620,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
         stream: FirebaseFirestore.instance.collection('users').doc(currentUser!.uid).snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xFF00A884)));
+            return const Center(child: CircularProgressIndicator(color: Color(0xFF0078FF)));
           }
 
           if (!snapshot.hasData || !snapshot.data!.exists) {
@@ -629,15 +629,15 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
 
           final userData = snapshot.data!.data() as Map<String, dynamic>;
           final String name = userData['name'] ?? 'User';
-          final String bio = userData['about'] ?? userData['bio'] ?? 'Hey there! I am using Techaxe Chat.';
+          final String bio = userData['about'] ?? userData['bio'] ?? 'Hey there! I am using Chattrix App.';
           final String profileImage = userData['profileImage'] ?? '';
           final String uniqueId = userData['uniqueId'] ?? '';
 
           return CustomScrollView(
             slivers: [
-              // Signature Collapsing SliverAppBar with Doodle Background & Floating Bubble Elements
+              // Signature Collapsing SliverAppBar with Clean White Background & Floating Bubble Elements
               SliverAppBar(
-                backgroundColor: const Color(0xFFEFEAE2),
+                backgroundColor: Colors.white,
                 expandedHeight: 250.0,
                 pinned: true,
                 elevation: 0,
@@ -671,7 +671,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                     clipBehavior: Clip.none,
                     alignment: Alignment.center,
                     children: [
-                      Container(color: const Color(0xFFEFEAE2)),
+                      Container(color: const Color(0xFFF2F7FD)),
                       Positioned(
                         bottom: 0,
                         left: 0,
@@ -741,13 +741,13 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                                   ),
                                   child: CircleAvatar(
                                     radius: 50,
-                                    backgroundColor: const Color(0xFFC7E8FA),
+                                    backgroundColor: const Color(0xFFE5F1FF),
                                     backgroundImage: profileImage.isNotEmpty
                                         ? NetworkImage(profileImage)
                                         : null,
                                     onBackgroundImageError: profileImage.isNotEmpty ? (_, _) {} : null,
                                     child: profileImage.isEmpty
-                                        ? const Icon(Icons.person, size: 50, color: Color(0xFF008069))
+                                        ? const Icon(Icons.person, size: 50, color: Color(0xFF0078FF))
                                         : null,
                                   ),
                                 ),
@@ -808,12 +808,12 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                               'Chat ID: $uniqueId',
                               style: const TextStyle(
                                 fontSize: 13.5,
-                                color: Color(0xFF00A884),
+                                color: Color(0xFF0078FF),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(Icons.copy, size: 14, color: Color(0xFF00A884)),
+                            const Icon(Icons.copy, size: 14, color: Color(0xFF0078FF)),
                           ],
                         ),
                       ),
@@ -870,9 +870,9 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                       _buildSettingItem(
                         icon: Icons.group_add_outlined,
                         title: 'Invite a friend',
-                        subtitle: 'Share WhatsApp with friends and family',
+                        subtitle: 'Share Chattrix with friends and family',
                         onTap: () {
-                          Clipboard.setData(ClipboardData(text: 'Join me on Techaxe Chat! Use my Chat ID: $uniqueId'));
+                          Clipboard.setData(ClipboardData(text: 'Join me on Chattrix Chat! Use my Chat ID: $uniqueId'));
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Invite text copied to clipboard!')),
                           );
@@ -889,7 +889,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                       const SizedBox(height: 30),
                       Center(
                         child: Text(
-                          'from\nTechaxe',
+                          'from\nChattrix',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 12,

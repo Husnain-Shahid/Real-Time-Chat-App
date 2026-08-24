@@ -157,7 +157,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                               children: [
                                 CircleAvatar(
                                   radius: 24,
-                                  backgroundColor: const Color(0xFF00A884).withValues(alpha: 0.15),
+                                  backgroundColor: const Color(0xFF0078FF).withValues(alpha: 0.15),
                                   backgroundImage: member.profileImage.isNotEmpty
                                       ? NetworkImage(member.profileImage)
                                       : null,
@@ -168,7 +168,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 18,
-                                            color: Color(0xFF00A884),
+                                            color: Color(0xFF0078FF),
                                           ),
                                         )
                                       : null,
@@ -244,7 +244,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 18,
-                                            color: Color(0xFF00A884),
+                                            color: Color(0xFF0078FF),
                                           ),
                                         )
                                       : null,
@@ -255,7 +255,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                                     bottom: 0,
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF00A884),
+                                        color: const Color(0xFF0078FF),
                                         shape: BoxShape.circle,
                                         border: Border.all(color: Colors.white, width: 2),
                                       ),
@@ -280,7 +280,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                               style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                             ),
                             trailing: isSelected
-                                ? const Icon(Icons.check_circle, color: Color(0xFF00A884), size: 24)
+                                ? const Icon(Icons.check_circle, color: Color(0xFF0078FF), size: 24)
                                 : Icon(Icons.circle_outlined, color: Colors.grey.shade400, size: 24),
                           );
                         },
@@ -291,7 +291,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           floatingActionButton: _selectedMembers.isNotEmpty
               ? FloatingActionButton(
                   heroTag: 'create_group_next_fab',
-                  backgroundColor: const Color(0xFF00A884),
+                  backgroundColor: const Color(0xFF0078FF),
                   elevation: 4,
                   onPressed: _continueToGroupInfo,
                   child: const Icon(Icons.arrow_forward, color: Colors.white, size: 26),

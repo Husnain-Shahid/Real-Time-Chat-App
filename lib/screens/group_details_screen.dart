@@ -74,7 +74,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 ListTile(
-                  leading: const Icon(Icons.chat_outlined, color: Color(0xFF00A884)),
+                  leading: const Icon(Icons.chat_outlined, color: Color(0xFF0078FF)),
                   title: Text('Message ${member.name}'),
                   onTap: () {
                     Navigator.pop(sheetContext);
@@ -249,7 +249,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
         if (!snapshot.hasData || !snapshot.data!.exists) {
           return const Scaffold(
             backgroundColor: Colors.white,
-            body: Center(child: CircularProgressIndicator(color: Color(0xFF00A884))),
+            body: Center(child: CircularProgressIndicator(color: Color(0xFF0078FF))),
           );
         }
 
@@ -273,11 +273,11 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: const Color(0xFFC7E8FA),
+                  backgroundColor: const Color(0xFFE5F1FF),
                   backgroundImage: groupImage.isNotEmpty ? NetworkImage(groupImage) : null,
                   onBackgroundImageError: groupImage.isNotEmpty ? (_, _) {} : null,
                   child: groupImage.isEmpty
-                      ? const Icon(Icons.groups, color: Color(0xFF008069), size: 24)
+                      ? const Icon(Icons.groups, color: Color(0xFF0078FF), size: 24)
                       : null,
                 ),
                 const SizedBox(width: 12),
@@ -338,7 +338,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                   width: 44,
                   height: 44,
                   decoration: const BoxDecoration(
-                    color: Color(0xFF00A884),
+                    color: Color(0xFF0078FF),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.group_add, color: Colors.white, size: 22),
@@ -411,7 +411,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                     decoration: InputDecoration(
                       hintText: 'Search members...',
                       hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                      prefixIcon: const Icon(Icons.search, color: Color(0xFF00A884), size: 20),
+                      prefixIcon: const Icon(Icons.search, color: Color(0xFF0078FF), size: 20),
                       filled: true,
                       fillColor: const Color(0xFFF0F2F5),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -435,7 +435,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                   width: 44,
                   height: 44,
                   decoration: const BoxDecoration(
-                    color: Color(0xFF00A884),
+                    color: Color(0xFF0078FF),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.person_add_alt_1, color: Colors.white, size: 20),
@@ -464,7 +464,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                   width: 44,
                   height: 44,
                   decoration: const BoxDecoration(
-                    color: Color(0xFF00A884),
+                    color: Color(0xFF0078FF),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.link, color: Colors.white, size: 20),
@@ -487,7 +487,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                   if (!memberSnapshot.hasData) {
                     return const Padding(
                       padding: EdgeInsets.all(24.0),
-                      child: Center(child: CircularProgressIndicator(color: Color(0xFF00A884))),
+                      child: Center(child: CircularProgressIndicator(color: Color(0xFF0078FF))),
                     );
                   }
 
@@ -519,7 +519,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                         onTap: () => _showMemberOptions(member, createdBy, groupName),
                         leading: CircleAvatar(
                           radius: 22,
-                          backgroundColor: const Color(0xFFC7E8FA),
+                          backgroundColor: const Color(0xFFE5F1FF),
                           backgroundImage: member.profileImage.isNotEmpty
                               ? NetworkImage(member.profileImage)
                               : null,
@@ -530,7 +530,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
-                                    color: Color(0xFF008069),
+                                    color: Color(0xFF0078FF),
                                   ),
                                 )
                               : null,
@@ -548,7 +548,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                                 'Add member tag',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Color(0xFF00A884),
+                                  color: Color(0xFF0078FF),
                                   fontWeight: FontWeight.w500,
                                 ),
                               )
@@ -564,13 +564,13 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                             ? Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFDCF8C6),
+                                  color: const Color(0xFFE5F1FF),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: const Text(
                                   'Group Admin',
                                   style: TextStyle(
-                                    color: Color(0xFF008069),
+                                    color: Color(0xFF0078FF),
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.bold,
                                   ),

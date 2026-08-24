@@ -224,15 +224,15 @@ class _ChatScreenContentState extends State<_ChatScreenContent> with WidgetsBind
                         children: [
                           CircleAvatar(
                             radius: 19,
-                            backgroundColor: Colors.grey[200],
+                            backgroundColor: const Color(0xFFE5F1FF),
                             backgroundImage: widget.chat.avatarUrl.isNotEmpty ? NetworkImage(widget.chat.avatarUrl) : null,
                             onBackgroundImageError: widget.chat.avatarUrl.isNotEmpty ? (_, _) {} : null,
                             child: widget.chat.avatarUrl.isEmpty
                                 ? (widget.chat.isGroup
-                                    ? const Icon(Icons.groups, size: 22, color: Color(0xFF00A884))
+                                    ? const Icon(Icons.groups, size: 22, color: Color(0xFF0078FF))
                                     : Text(
                                         widget.chat.name.isNotEmpty ? widget.chat.name[0].toUpperCase() : '?',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF00A884)),
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0078FF)),
                                       ))
                                 : null,
                           ),
@@ -264,7 +264,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> with WidgetsBind
                                         'online',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Color(0xFF00A884),
+                                          color: Color(0xFF0078FF),
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -285,8 +285,9 @@ class _ChatScreenContentState extends State<_ChatScreenContent> with WidgetsBind
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const ActiveCallScreen(
-                                contactName: 'Hi Husnain',
+                              builder: (context) => ActiveCallScreen(
+                                contactName: widget.chat.name,
+                                profileImageUrl: widget.chat.avatarUrl.isNotEmpty ? widget.chat.avatarUrl : null,
                               ),
                             ),
                           );
@@ -441,7 +442,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> with WidgetsBind
                                     child: Stack(
                                       alignment: Alignment.center,
                                       children: [
-                                        const Icon(Icons.keyboard_arrow_down, color: Color(0xFF075E54), size: 28),
+                                        const Icon(Icons.keyboard_arrow_down, color: Color(0xFF0078FF), size: 28),
                                         if (_newMessagesWhileScrolledCount > 0)
                                           Positioned(
                                             top: 2,
@@ -449,7 +450,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> with WidgetsBind
                                             child: Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                                               decoration: const BoxDecoration(
-                                                color: Color(0xFF25D366),
+                                                color: Color(0xFF0078FF),
                                                 shape: BoxShape.circle,
                                               ),
                                               child: Text(
@@ -525,7 +526,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> with WidgetsBind
                               const SizedBox(height: 6),
                               LinearProgressIndicator(
                                 value: mediaProv.uploadProgress,
-                                color: const Color(0xFF075E54),
+                                color: const Color(0xFF0078FF),
                                 backgroundColor: Colors.grey[200],
                               ),
                             ],
@@ -548,7 +549,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> with WidgetsBind
                   color: Colors.grey[200],
                   child: Row(
                     children: [
-                      Container(width: 4, height: 35, color: const Color(0xFF075E54)),
+                      Container(width: 4, height: 35, color: const Color(0xFF0078FF)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
@@ -559,7 +560,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> with WidgetsBind
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
-                                color: Color(0xFF075E54),
+                                color: Color(0xFF0078FF),
                               ),
                             ),
                             Text(
@@ -681,117 +682,134 @@ class _ChatScreenContentState extends State<_ChatScreenContent> with WidgetsBind
   }
 
   Widget _buildMessageInputArea(BuildContext context, ChatProvider chatProvider, MediaProvider mediaProvider) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      color: Colors.transparent,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(6, 2, 6, 14),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
+                borderRadius: BorderRadius.circular(26),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Icon(Icons.emoji_emotions_outlined, color: Colors.grey),
-                  const SizedBox(width: 8),
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 10, left: 4),
+                    child: Icon(Icons.emoji_emotions_outlined, color: Colors.grey, size: 24),
+                  ),
+                  const SizedBox(width: 4),
                   Expanded(
                     child: TextField(
                       controller: chatProvider.textController,
+                      minLines: 1,
+                      maxLines: 5,
+                      keyboardType: TextInputType.multiline,
+                      textCapitalization: TextCapitalization.sentences,
+                      scrollPhysics: const BouncingScrollPhysics(),
+                      style: const TextStyle(fontSize: 16, color: Colors.black87),
                       decoration: const InputDecoration(
                         hintText: 'Message',
+                        hintStyle: TextStyle(color: Colors.grey, fontSize: 16),
                         border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 10),
                       ),
                       onChanged: (_) => setState(() {}),
-                      onSubmitted: (_) {
-                        if (mediaProvider.selectedFile != null) {
-                          mediaProvider.sendMediaMessage(
-                            widget.receiverId,
-                            widget.chat.name,
-                            chatProvider.textController.text,
-                          );
-                          chatProvider.textController.clear();
-                        } else {
-                          chatProvider.sendMessage(widget.receiverId, widget.chat.name);
-                        }
-                      },
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.attach_file, color: Colors.grey),
-                    onPressed: () => _showAttachmentSheet(context),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: IconButton(
+                      icon: const Icon(Icons.attach_file, color: Colors.grey, size: 22),
+                      onPressed: () => _showAttachmentSheet(context),
+                    ),
                   ),
-                  const SizedBox(width: 4),
-                  IconButton(
-                    icon: const Icon(Icons.camera_alt_outlined, color: Colors.grey),
-                    onPressed: () => mediaProvider.pickImageCamera(),
-                  ),
+                  if (chatProvider.textController.text.trim().isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: IconButton(
+                        icon: const Icon(Icons.camera_alt_outlined, color: Colors.grey, size: 22),
+                        onPressed: () => mediaProvider.pickImageCamera(),
+                      ),
+                    ),
                 ],
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: const Color(0xFF00A884),
-            child: Consumer<MediaProvider>(
-              builder: (context, mediaProv, child) {
-                if (mediaProv.isUploading || mediaProv.isUploadingVoice) {
-                  return const Padding(
-                    padding: EdgeInsets.all(12.0),
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                  );
-                }
-
-                return ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: chatProvider.textController,
-                  builder: (context, value, _) {
-                    final hasTypedText = value.text.trim().isNotEmpty;
-                    final hasSelectedMedia = mediaProv.selectedFile != null;
-                    final showSendButton = hasTypedText || hasSelectedMedia;
-
-                    return IconButton(
-                      icon: Icon(
-                        showSendButton ? Icons.send : Icons.mic,
-                        color: Colors.white,
-                        size: 21,
-                      ),
-                      onPressed: () async {
-                        if (showSendButton) {
-                          if (mediaProv.selectedFile != null) {
-                            final caption = chatProvider.textController.text;
-                            await mediaProv.sendMediaMessage(
-                              widget.receiverId,
-                              widget.chat.name,
-                              caption,
-                            );
-                            chatProvider.textController.clear();
-                            if (mediaProv.errorMessage != null && context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(mediaProv.errorMessage!)),
-                              );
-                              mediaProv.clearError();
-                            }
-                          } else {
-                            await chatProvider.sendMessage(widget.receiverId, widget.chat.name);
-                          }
-                          return;
-                        }
-
-                        await _showVoiceRecorderSheet(context, chatProvider, mediaProv);
-                        if (mediaProv.errorMessage != null && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(mediaProv.errorMessage!)),
-                          );
-                          mediaProv.clearError();
-                        }
-                      },
+          const SizedBox(width: 6),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 2),
+            child: CircleAvatar(
+              radius: 23,
+              backgroundColor: const Color(0xFF0078FF),
+              child: Consumer<MediaProvider>(
+                builder: (context, mediaProv, child) {
+                  if (mediaProv.isUploading || mediaProv.isUploadingVoice) {
+                    return const Padding(
+                      padding: EdgeInsets.all(12.0),
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                     );
-                  },
-                );
-              },
+                  }
+
+                  return ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: chatProvider.textController,
+                    builder: (context, value, _) {
+                      final hasTypedText = value.text.trim().isNotEmpty;
+                      final hasSelectedMedia = mediaProv.selectedFile != null;
+                      final showSendButton = hasTypedText || hasSelectedMedia;
+
+                      return IconButton(
+                        icon: Icon(
+                          showSendButton ? Icons.send : Icons.mic,
+                          color: Colors.white,
+                          size: 21,
+                        ),
+                        onPressed: () async {
+                          if (showSendButton) {
+                            if (mediaProv.selectedFile != null) {
+                              final caption = chatProvider.textController.text;
+                              await mediaProv.sendMediaMessage(
+                                widget.receiverId,
+                                widget.chat.name,
+                                caption,
+                              );
+                              chatProvider.textController.clear();
+                              if (mediaProv.errorMessage != null && context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(mediaProv.errorMessage!)),
+                                );
+                                mediaProv.clearError();
+                              }
+                            } else {
+                              await chatProvider.sendMessage(widget.receiverId, widget.chat.name);
+                            }
+                            return;
+                          }
+
+                          await _showVoiceRecorderSheet(context, chatProvider, mediaProv);
+                          if (mediaProv.errorMessage != null && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(mediaProv.errorMessage!)),
+                            );
+                            mediaProv.clearError();
+                          }
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -865,7 +883,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> with WidgetsBind
             },
             child: const Text(
               'Delete for me',
-              style: TextStyle(color: Color(0xFF00A884), fontWeight: FontWeight.bold),
+              style: TextStyle(color: Color(0xFF0078FF), fontWeight: FontWeight.bold),
             ),
           ),
           TextButton(
@@ -932,7 +950,7 @@ Color _getSenderColor(String name) {
     const Color(0xFFC3423F),
     const Color(0xFF2E86AB),
   ];
-  if (name.isEmpty) return const Color(0xFF00A884);
+  if (name.isEmpty) return const Color(0xFF0078FF);
   final hash = name.codeUnits.fold<int>(0, (prev, elem) => prev + elem);
   return colors[hash % colors.length];
 }
@@ -960,7 +978,7 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: isSelected ? const Color(0x3353BDEB) : Colors.transparent,
+      color: isSelected ? const Color(0xFF0078FF).withValues(alpha: 0.15) : Colors.transparent,
       child: _buildBubbleContent(context),
     );
   }
@@ -1004,7 +1022,7 @@ class _MessageBubble extends StatelessWidget {
                     child: CircleAvatar(
                       radius: 15,
                       backgroundColor: Colors.white.withValues(alpha: 0.85),
-                      child: const Icon(Icons.reply, textDirection: TextDirection.rtl, size: 16, color: Colors.black87),
+                      child: const Icon(Icons.reply, size: 16, color: Colors.black87),
                     ),
                   ),
                 if (isGroup && !isMe)
@@ -1033,13 +1051,14 @@ class _MessageBubble extends StatelessWidget {
                   ),
                 Container(
                   padding: const EdgeInsets.all(3),
+                  constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
                   decoration: BoxDecoration(
-                    color: isMe ? const Color(0xFFD9FDD3) : Colors.white,
+                    color: isMe ? const Color(0xFFE7F3FF) : Colors.white,
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 1,
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 2,
                         offset: const Offset(0, 1),
                       ),
                     ],
@@ -1090,7 +1109,7 @@ class _MessageBubble extends StatelessWidget {
                     child: CircleAvatar(
                       radius: 15,
                       backgroundColor: Colors.white.withValues(alpha: 0.85),
-                      child: const Icon(Icons.reply, textDirection: TextDirection.rtl, size: 16, color: Colors.black87),
+                      child: const Icon(Icons.reply, size: 16, color: Colors.black87),
                     ),
                   ),
               ],
@@ -1140,7 +1159,7 @@ class _MessageBubble extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(9, 6, 9, 5),
                   constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
                   decoration: BoxDecoration(
-                    color: isMe ? const Color(0xFFD9FDD3) : Colors.white,
+                    color: isMe ? const Color(0xFFE7F3FF) : Colors.white,
                     borderRadius: BorderRadius.circular(9),
                     boxShadow: [
                       BoxShadow(
@@ -1256,7 +1275,7 @@ class _MessageBubble extends StatelessWidget {
                             Icon(
                               Icons.done_all,
                               size: 15,
-                              color: message.isRead ? const Color(0xFF53BDEB) : Colors.grey[500],
+                              color: message.isRead ? const Color(0xFF0078FF) : Colors.grey[500],
                             ),
                           ],
                         ],
@@ -1291,7 +1310,7 @@ class _ReplyBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isAuthorMe = author == 'You' || author.toLowerCase() == 'you';
-    final Color barColor = isAuthorMe ? const Color(0xFF00A884) : const Color(0xFF7C3AED);
+    final Color barColor = isAuthorMe ? const Color(0xFF0078FF) : const Color(0xFF7C3AED);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
@@ -1388,7 +1407,7 @@ class _MediaContent extends StatelessWidget {
                       Icon(
                         Icons.done_all,
                         size: 14,
-                        color: message.isRead ? const Color(0xFF53BDEB) : Colors.white70,
+                        color: message.isRead ? const Color(0xFF0078FF) : Colors.white70,
                       ),
                     ],
                   ],
@@ -1418,7 +1437,7 @@ class _MediaContent extends StatelessWidget {
                     width: 220,
                     height: 220,
                     color: Colors.grey[200],
-                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00A884))),
+                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0078FF))),
                   );
                 },
                 errorBuilder: (context, error, stackTrace) => Container(
@@ -1451,7 +1470,7 @@ class _MediaContent extends StatelessWidget {
                       Icon(
                         Icons.done_all,
                         size: 14,
-                        color: message.isRead ? const Color(0xFF53BDEB) : Colors.white70,
+                        color: message.isRead ? const Color(0xFF0078FF) : Colors.white70,
                       ),
                     ],
                   ],
@@ -1579,7 +1598,7 @@ class _VoiceNoteMessageBubbleState extends State<_VoiceNoteMessageBubble> {
             minWidth: 225,
           ),
           decoration: BoxDecoration(
-            color: isMe ? const Color(0xFFD9FDD3) : Colors.white,
+            color: isMe ? const Color(0xFFE7F3FF) : Colors.white,
             borderRadius: BorderRadius.circular(9),
             boxShadow: [
               BoxShadow(
@@ -1617,13 +1636,13 @@ class _VoiceNoteMessageBubbleState extends State<_VoiceNoteMessageBubble> {
                         child: Container(
                           padding: const EdgeInsets.all(1.5),
                           decoration: BoxDecoration(
-                            color: isMe ? const Color(0xFFD9FDD3) : Colors.white,
+                            color: isMe ? const Color(0xFFE7F3FF) : Colors.white,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
                             Icons.mic,
                             size: 14,
-                            color: Color(0xFF53BDEB),
+                            color: Color(0xFF0078FF),
                           ),
                         ),
                       ),
@@ -1657,7 +1676,7 @@ class _VoiceNoteMessageBubbleState extends State<_VoiceNoteMessageBubble> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Waveform Track with Cyan Scrubber Dot
+                        // Waveform Track with Scrubber Dot
                         LayoutBuilder(
                           builder: (context, constraints) {
                             return GestureDetector(
@@ -1680,9 +1699,9 @@ class _VoiceNoteMessageBubbleState extends State<_VoiceNoteMessageBubble> {
                                 child: CustomPaint(
                                   painter: _WhatsAppWaveformPainter(
                                     progress: progress,
-                                    activeColor: const Color(0xFF53BDEB),
+                                    activeColor: const Color(0xFF0078FF),
                                     inactiveColor: Colors.grey.shade400,
-                                    thumbColor: const Color(0xFF53BDEB),
+                                    thumbColor: const Color(0xFF0078FF),
                                   ),
                                 ),
                               ),
@@ -1717,7 +1736,7 @@ class _VoiceNoteMessageBubbleState extends State<_VoiceNoteMessageBubble> {
                                   Icon(
                                     Icons.done_all,
                                     size: 15,
-                                    color: widget.message.isRead ? const Color(0xFF53BDEB) : const Color(0xFF8696A0),
+                                    color: widget.message.isRead ? const Color(0xFF0078FF) : const Color(0xFF8696A0),
                                   ),
                                 ],
                               ],
@@ -1840,7 +1859,7 @@ class _VideoMessagePreviewState extends State<_VideoMessagePreview> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_initialized) return Container(width: 220, height: 220, color: Colors.grey[200], child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF075E54))));
+    if (!_initialized) return Container(width: 220, height: 220, color: Colors.grey[200], child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0078FF))));
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -2044,13 +2063,13 @@ class _WhatsAppVoiceRecordingSheetState extends State<_WhatsAppVoiceRecordingShe
                             Icon(
                               isPaused ? Icons.mic : Icons.pause,
                               size: 22,
-                              color: isPaused ? const Color(0xFF00A884) : Colors.black87,
+                              color: isPaused ? const Color(0xFF0078FF) : Colors.black87,
                             ),
                             const SizedBox(width: 8),
                             Text(
                               isPaused ? 'Resume' : 'Pause',
                               style: TextStyle(
-                                color: isPaused ? const Color(0xFF00A884) : Colors.black87,
+                                color: isPaused ? const Color(0xFF0078FF) : Colors.black87,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
                               ),
@@ -2060,7 +2079,7 @@ class _WhatsAppVoiceRecordingSheetState extends State<_WhatsAppVoiceRecordingShe
                       ),
                     ),
 
-                    // Send Button (WhatsApp green circular container)
+                    // Send Button (Messenger blue circular container)
                     GestureDetector(
                       onTap: () async {
                         if (mediaProv.isUploadingVoice) return;
@@ -2080,7 +2099,7 @@ class _WhatsAppVoiceRecordingSheetState extends State<_WhatsAppVoiceRecordingShe
                         width: 48,
                         height: 48,
                         decoration: const BoxDecoration(
-                          color: Color(0xFF00A884),
+                          color: Color(0xFF0078FF),
                           shape: BoxShape.circle,
                         ),
                         child: mediaProv.isUploadingVoice
@@ -2276,7 +2295,7 @@ class _WhatsAppAttachmentSheet extends StatelessWidget {
                       ),
                       _buildAttachmentItem(
                         icon: Icons.location_on_outlined,
-                        color: const Color(0xFF00A884), // Emerald
+                        color: const Color(0xFF0078FF), // Blue
                         label: 'Location',
                         onTap: onPickLocation,
                       ),
@@ -2560,7 +2579,7 @@ class _ChatTopHeaderCard extends StatelessWidget {
                       ),
                       TextSpan(
                         text: 'Learn more',
-                        style: TextStyle(color: Color(0xFF00A884), fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Color(0xFF0078FF), fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -2625,11 +2644,11 @@ class _GroupWelcomeCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 38,
-                    backgroundColor: const Color(0xFFC7E8FA),
+                    backgroundColor: const Color(0xFFE5F1FF),
                     backgroundImage: groupImage.isNotEmpty ? NetworkImage(groupImage) : null,
                     onBackgroundImageError: groupImage.isNotEmpty ? (_, _) {} : null,
                     child: groupImage.isEmpty
-                        ? const Icon(Icons.groups, size: 40, color: Color(0xFF008069))
+                        ? const Icon(Icons.groups, size: 40, color: Color(0xFF0078FF))
                         : null,
                   ),
                   Positioned(
@@ -2638,7 +2657,7 @@ class _GroupWelcomeCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(5),
                       decoration: const BoxDecoration(
-                        color: Color(0xFF00A884),
+                        color: Color(0xFF0078FF),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
@@ -2678,7 +2697,7 @@ class _GroupWelcomeCard extends StatelessWidget {
                     TextSpan(text: 'Members can add people or invite them\nusing a link. '),
                     TextSpan(
                       text: 'Edit',
-                      style: TextStyle(color: Color(0xFF00A884), fontWeight: FontWeight.bold),
+                      style: TextStyle(color: Color(0xFF0078FF), fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -2694,11 +2713,11 @@ class _GroupWelcomeCard extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                     padding: const EdgeInsets.symmetric(vertical: 11),
                   ),
-                  icon: const Icon(Icons.person_add_alt_1, color: Color(0xFF008069), size: 20),
+                  icon: const Icon(Icons.person_add_alt_1, color: Color(0xFF0078FF), size: 20),
                   label: const Text(
                     'Add members',
                     style: TextStyle(
-                      color: Color(0xFF008069),
+                      color: Color(0xFF0078FF),
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
                     ),
@@ -2727,11 +2746,11 @@ class _GroupWelcomeCard extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                     padding: const EdgeInsets.symmetric(vertical: 11),
                   ),
-                  icon: const Icon(Icons.link, color: Color(0xFF008069), size: 20),
+                  icon: const Icon(Icons.link, color: Color(0xFF0078FF), size: 20),
                   label: const Text(
                     'Invite via link or QR code',
                     style: TextStyle(
-                      color: Color(0xFF008069),
+                      color: Color(0xFF0078FF),
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
                     ),

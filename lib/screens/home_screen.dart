@@ -8,6 +8,7 @@ import '../models/chat_model.dart';
 import '../provider/home_provider.dart';
 import '../widget/custom_nav_bar.dart';
 import '../services/database_service.dart';
+import '../services/notification_service.dart';
 import 'chat_screen.dart';
 import 'updates_screen.dart';
 import 'calls_screen.dart';
@@ -45,6 +46,15 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
     super.initState();
     final initialIndex = Provider.of<HomeProvider>(context, listen: false).currentIndex;
     _pageController = PageController(initialPage: initialIndex);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        DatabaseService().ensureUserProfileExists(user);
+        NotificationService.instance.startListening(user.uid);
+        NotificationService.instance.requestPermission();
+      }
+    });
   }
 
   @override

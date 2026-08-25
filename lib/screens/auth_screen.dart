@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/user_model.dart';
 import 'forgot_password_screen.dart';
 import 'home_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../services/database_service.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -56,10 +55,13 @@ class _AuthScreenState extends State<AuthScreen> {
       try {
         if (isLoginSelected) {
           // --- LOGIN LOGIC ---
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
+          UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
             email: _emailController.text.trim(),
             password: _passwordController.text.trim(),
           );
+          if (userCredential.user != null) {
+            await DatabaseService().ensureUserProfileExists(userCredential.user!);
+          }
         } else {
           // --- SIGN UP LOGIC ---
           UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
@@ -67,20 +69,12 @@ class _AuthScreenState extends State<AuthScreen> {
             password: _passwordController.text.trim(),
           );
 
-          String uid = userCredential.user!.uid;
-          String uniqueId = UserModel.generateUniqueId();
-
-          // Create User Profile in Firestore
-          UserModel newUser = UserModel(
-            uid: uid,
-            uniqueId: uniqueId,
-            name: _nameController.text.trim(),
-            email: _emailController.text.trim(),
-            lastSeen: Timestamp.now(),
-            createdAt: DateTime.now(),
-          );
-
-          await FirebaseFirestore.instance.collection('users').doc(uid).set(newUser.toMap());
+          if (userCredential.user != null) {
+            await DatabaseService().ensureUserProfileExists(
+              userCredential.user!,
+              customName: _nameController.text.trim(),
+            );
+          }
         }
 
         // Navigate to Home upon success
@@ -91,14 +85,16 @@ class _AuthScreenState extends State<AuthScreen> {
           );
         }
       } on FirebaseAuthException catch (e) {
-        print('Firebase Error Code: ${e.code}'); // Check your debug console for this!
-        print('Firebase Error Message: ${e.message}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message ?? 'Authentication failed'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        debugPrint('Firebase Error Code: ${e.code}');
+        debugPrint('Firebase Error Message: ${e.message}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.message ?? 'Authentication failed'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
       } finally {
         if (mounted) setState(() => _isLoading = false);
       }
@@ -132,25 +128,8 @@ class _AuthScreenState extends State<AuthScreen> {
       User? user = userCredential.user;
 
       if (user != null) {
-        // 5. Check if user already exists in Firestore
-        final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-
-        if (!userDoc.exists) {
-          // If first time Google sign-in, create a new document with a Unique ID
-          String uniqueId = UserModel.generateUniqueId();
-
-          UserModel newUser = UserModel(
-            uid: user.uid,
-            uniqueId: uniqueId,
-            name: user.displayName ?? 'User',
-            email: user.email ?? '',
-            profileImage: user.photoURL ?? '',
-            lastSeen: Timestamp.now(),
-            createdAt: DateTime.now(),
-          );
-
-          await FirebaseFirestore.instance.collection('users').doc(user.uid).set(newUser.toMap());
-        }
+        // 5. Ensure complete profile with Unique Chat ID exists in Firestore
+        await DatabaseService().ensureUserProfileExists(user);
 
         // 6. Navigate to Home
         if (mounted) {
@@ -161,19 +140,23 @@ class _AuthScreenState extends State<AuthScreen> {
         }
       }
     } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message ?? 'Google Sign-In failed'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message ?? 'Google Sign-In failed'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('An error occurred: $e'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('An error occurred: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

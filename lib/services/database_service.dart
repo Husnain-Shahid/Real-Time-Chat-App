@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/message_model.dart';
 import '../models/user_model.dart';
 import 'cloudinary_service.dart';
+import 'notification_service.dart';
 
 class DatabaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -17,6 +18,48 @@ class DatabaseService {
     List<String> ids = [userId1, userId2];
     ids.sort();
     return ids.join('_');
+  }
+
+  Future<void> ensureUserProfileExists(User user, {String? customName}) async {
+    try {
+      final docRef = _firestore.collection('users').doc(user.uid);
+      final doc = await docRef.get();
+      final data = doc.data();
+
+      final bool isDocMissing = !doc.exists;
+      final bool isMissingUniqueId = doc.exists && (data == null || data['uniqueId'] == null || (data['uniqueId'] as String).isEmpty);
+      final bool isMissingEmail = doc.exists && (data == null || data['email'] == null || (data['email'] as String).isEmpty);
+
+      if (isDocMissing || isMissingUniqueId || isMissingEmail) {
+        String uniqueId = (data != null && data['uniqueId'] != null && (data['uniqueId'] as String).isNotEmpty)
+            ? data['uniqueId']
+            : UserModel.generateUniqueId();
+
+        final updates = {
+          'uid': user.uid,
+          'uniqueId': uniqueId,
+          'name': customName ?? ((data != null && data['name'] != null && (data['name'] as String).isNotEmpty)
+              ? data['name']
+              : (user.displayName ?? 'User')),
+          'username': (user.email != null && user.email!.contains('@'))
+              ? user.email!.split('@')[0]
+              : (user.displayName?.toLowerCase().replaceAll(' ', '_') ?? 'user'),
+          'email': user.email ?? '',
+          'profileImage': (data != null && data['profileImage'] != null && (data['profileImage'] as String).isNotEmpty)
+              ? data['profileImage']
+              : (user.photoURL ?? ''),
+          'about': (data != null && data['about'] != null) ? data['about'] : 'Hey there! I am using Chattrix.',
+          'isOnline': true,
+          'lastSeen': Timestamp.now(),
+          'createdAt': (data != null && data['createdAt'] != null) ? data['createdAt'] : FieldValue.serverTimestamp(),
+        };
+
+        await docRef.set(updates, SetOptions(merge: true));
+        debugPrint('DatabaseService: Successfully ensured user profile for ${user.uid} with uniqueId: $uniqueId');
+      }
+    } catch (e) {
+      debugPrint('DatabaseService: Error ensuring user profile: $e');
+    }
   }
 
   Future<void> createChatRoom(String receiverId) async {
@@ -165,6 +208,17 @@ class DatabaseService {
     batch.set(chatRoomRef, chatRoomUpdate, SetOptions(merge: true));
 
     await batch.commit();
+
+    // Dispatch FCM push notification (delivers even when recipient app is completely closed/killed)
+    NotificationService.instance.sendPushNotification(
+      receiverId: receiverId,
+      senderName: senderName,
+      senderImage: senderImage,
+      messageText: lastMessageText,
+      mediaType: mediaType,
+      mediaUrl: mediaUrl,
+      isGroup: isGroupChat,
+    );
   }
 
   Stream<List<MessageModel>> getMessages(String receiverId) {

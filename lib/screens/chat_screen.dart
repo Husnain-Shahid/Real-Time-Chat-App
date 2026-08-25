@@ -11,6 +11,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../models/chat_model.dart';
 import '../models/message_model.dart';
 import '../services/database_service.dart';
+import '../services/notification_service.dart';
 import '../provider/chat_provider.dart';
 import '../provider/media_provider.dart';
 import 'chat_details_screen.dart';
@@ -69,6 +70,13 @@ class _ChatScreenContentState extends State<_ChatScreenContent> with WidgetsBind
         Provider.of<ChatProvider>(context, listen: false).setActiveChat(widget.receiverId);
       }
     });
+
+    final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final String chatRoomId = widget.receiverId.startsWith('group_')
+        ? widget.receiverId
+        : _databaseService.getChatRoomId(currentUserId, widget.receiverId);
+    NotificationService.instance.setActiveChatRoomId(chatRoomId);
+
     // Mark messages as read immediately upon opening
     _databaseService.markMessagesAsRead(widget.receiverId);
   }
@@ -102,11 +110,18 @@ class _ChatScreenContentState extends State<_ChatScreenContent> with WidgetsBind
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final String chatRoomId = widget.receiverId.startsWith('group_')
+        ? widget.receiverId
+        : _databaseService.getChatRoomId(currentUserId, widget.receiverId);
+
     if (state == AppLifecycleState.resumed) {
       Provider.of<ChatProvider>(context, listen: false).setActiveChat(widget.receiverId);
+      NotificationService.instance.setActiveChatRoomId(chatRoomId);
       _databaseService.markMessagesAsRead(widget.receiverId);
     } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
       Provider.of<ChatProvider>(context, listen: false).setActiveChat(null);
+      NotificationService.instance.clearActiveChatRoomId();
     }
   }
 
@@ -117,6 +132,7 @@ class _ChatScreenContentState extends State<_ChatScreenContent> with WidgetsBind
     _scrollController.dispose();
     // Clear active chat status when leaving this chat screen
     Provider.of<ChatProvider>(context, listen: false).setActiveChat(null);
+    NotificationService.instance.clearActiveChatRoomId();
     _databaseService.markMessagesAsRead(widget.receiverId);
     super.dispose();
   }

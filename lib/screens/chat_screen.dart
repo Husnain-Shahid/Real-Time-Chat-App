@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
@@ -22,11 +23,13 @@ import 'active_call_screen.dart';
 class ChatScreen extends StatelessWidget {
   final ChatModel chat;
   final String receiverId;
+  final bool isEmbedded;
 
   const ChatScreen({
     super.key,
     required this.chat,
     required this.receiverId,
+    this.isEmbedded = false,
   });
 
   @override
@@ -36,17 +39,23 @@ class ChatScreen extends StatelessWidget {
       Provider.of<ChatProvider>(context, listen: false).initChat(receiverId);
     });
 
-    return _ChatScreenContent(chat: chat, receiverId: receiverId);
+    return _ChatScreenContent(
+      chat: chat,
+      receiverId: receiverId,
+      isEmbedded: isEmbedded,
+    );
   }
 }
 
 class _ChatScreenContent extends StatefulWidget {
   final ChatModel chat;
   final String receiverId;
+  final bool isEmbedded;
 
   const _ChatScreenContent({
     required this.chat,
     required this.receiverId,
+    this.isEmbedded = false,
   });
 
   @override
@@ -210,11 +219,14 @@ class _ChatScreenContentState extends State<_ChatScreenContent> with WidgetsBind
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.black87,
                     elevation: 0.5,
-                    leading: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.black87),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    titleSpacing: 0,
+                    automaticallyImplyLeading: !widget.isEmbedded,
+                    leading: widget.isEmbedded
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                    titleSpacing: widget.isEmbedded ? 16 : 0,
                     title: GestureDetector(
                       onTap: () {
                         if (widget.chat.isGroup) {
@@ -511,11 +523,19 @@ class _ChatScreenContentState extends State<_ChatScreenContent> with WidgetsBind
                                     color: Colors.black12,
                                     child: const Icon(Icons.videocam, size: 30, color: Colors.deepOrange),
                                   )
-                                : Image.file(
-                                    mediaProv.selectedFile!,
-                                    width: 60, height: 60,
-                                    fit: BoxFit.cover,
-                                  ),
+                                : (mediaProv.selectedBytes != null
+                                    ? Image.memory(
+                                        mediaProv.selectedBytes!,
+                                        width: 60, height: 60,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : (mediaProv.selectedFile != null && !kIsWeb
+                                        ? Image.file(
+                                            mediaProv.selectedFile!,
+                                            width: 60, height: 60,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : const Icon(Icons.image, size: 40))),
                           ),
                           Positioned(
                             right: 0, top: 0,

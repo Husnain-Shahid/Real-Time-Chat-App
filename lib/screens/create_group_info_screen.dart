@@ -1,6 +1,7 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/chat_model.dart';
 import '../models/user_model.dart';
@@ -27,7 +28,8 @@ class _CreateGroupInfoScreenState extends State<CreateGroupInfoScreen> {
   final ImagePickerService _pickerService = ImagePickerService();
   final CloudinaryService _cloudinaryService = CloudinaryService();
 
-  File? _groupImageFile;
+  Uint8List? _groupImageBytes;
+  String? _groupImageFileName;
   bool _isCreating = false;
 
   @override
@@ -56,9 +58,13 @@ class _CreateGroupInfoScreenState extends State<CreateGroupInfoScreen> {
                   color: Colors.pinkAccent,
                   onTap: () async {
                     Navigator.pop(context);
-                    final file = await _pickerService.pickFromCamera();
-                    if (file != null) {
-                      setState(() => _groupImageFile = file);
+                    final xFile = await _pickerService.pickImageXFile(source: ImageSource.camera);
+                    if (xFile != null) {
+                      final bytes = await xFile.readAsBytes();
+                      setState(() {
+                        _groupImageBytes = bytes;
+                        _groupImageFileName = xFile.name;
+                      });
                     }
                   },
                 ),
@@ -68,20 +74,27 @@ class _CreateGroupInfoScreenState extends State<CreateGroupInfoScreen> {
                   color: Colors.purpleAccent,
                   onTap: () async {
                     Navigator.pop(context);
-                    final file = await _pickerService.pickFromGallery();
-                    if (file != null) {
-                      setState(() => _groupImageFile = file);
+                    final xFile = await _pickerService.pickImageXFile(source: ImageSource.gallery);
+                    if (xFile != null) {
+                      final bytes = await xFile.readAsBytes();
+                      setState(() {
+                        _groupImageBytes = bytes;
+                        _groupImageFileName = xFile.name;
+                      });
                     }
                   },
                 ),
-                if (_groupImageFile != null)
+                if (_groupImageBytes != null)
                   _buildSourceOption(
                     icon: Icons.delete_outline,
                     label: 'Remove',
                     color: Colors.redAccent,
                     onTap: () {
                       Navigator.pop(context);
-                      setState(() => _groupImageFile = null);
+                      setState(() {
+                        _groupImageBytes = null;
+                        _groupImageFileName = null;
+                      });
                     },
                   ),
               ],
@@ -137,10 +150,10 @@ class _CreateGroupInfoScreenState extends State<CreateGroupInfoScreen> {
       String? groupImageUrl;
 
       // Upload group image to Cloudinary if selected
-      if (_groupImageFile != null) {
-        final uploadResult = await _cloudinaryService.uploadMedia(
-          file: _groupImageFile!,
-          mediaType: 'image',
+      if (_groupImageBytes != null) {
+        final uploadResult = await _cloudinaryService.uploadImage(
+          imageBytes: _groupImageBytes!,
+          fileName: _groupImageFileName ?? 'group_${DateTime.now().millisecondsSinceEpoch}.png',
           onProgress: (_) {},
         );
         if (uploadResult != null) {
@@ -236,8 +249,8 @@ class _CreateGroupInfoScreenState extends State<CreateGroupInfoScreen> {
                     child: CircleAvatar(
                       radius: 28,
                       backgroundColor: Colors.grey.shade200,
-                      backgroundImage: _groupImageFile != null ? FileImage(_groupImageFile!) : null,
-                      child: _groupImageFile == null
+                      backgroundImage: _groupImageBytes != null ? MemoryImage(_groupImageBytes!) : null,
+                      child: _groupImageBytes == null
                           ? const Icon(Icons.camera_alt, color: Colors.black45, size: 28)
                           : null,
                     ),

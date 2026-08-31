@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/status_model.dart';
@@ -149,7 +150,9 @@ class StatusProvider extends ChangeNotifier {
 
   /// Publish an image or video status via Cloudinary
   Future<bool> publishMediaStatus({
-    required File file,
+    File? file,
+    Uint8List? bytes,
+    String? fileName,
     required String mediaType, // 'image' | 'video'
     String? caption,
   }) async {
@@ -161,22 +164,34 @@ class StatusProvider extends ChangeNotifier {
     try {
       Map<String, String?>? uploadResult;
 
-      if (mediaType == 'video') {
-        uploadResult = await _cloudinaryService.uploadVideo(
-          video: file,
+      if (bytes != null) {
+        uploadResult = await _cloudinaryService.uploadBytes(
+          bytes: bytes,
+          fileName: fileName ?? (mediaType == 'video' ? 'status.mp4' : 'status.png'),
+          mediaType: mediaType,
           onProgress: (progress) {
             _uploadProgress = progress;
             notifyListeners();
           },
         );
-      } else {
-        uploadResult = await _cloudinaryService.uploadImage(
-          image: file,
-          onProgress: (progress) {
-            _uploadProgress = progress;
-            notifyListeners();
-          },
-        );
+      } else if (file != null) {
+        if (mediaType == 'video') {
+          uploadResult = await _cloudinaryService.uploadVideo(
+            video: file,
+            onProgress: (progress) {
+              _uploadProgress = progress;
+              notifyListeners();
+            },
+          );
+        } else {
+          uploadResult = await _cloudinaryService.uploadImage(
+            image: file,
+            onProgress: (progress) {
+              _uploadProgress = progress;
+              notifyListeners();
+            },
+          );
+        }
       }
 
       final mediaUrl = uploadResult?['secure_url'];

@@ -174,10 +174,10 @@ class _StatusViewerScreenState extends State<StatusViewerScreen> with SingleTick
     }
   }
 
-  void _showDeleteDialog(BuildContext context, String itemId) {
+  void _showDeleteDialog(BuildContext parentContext, String itemId) {
     _pause();
     showDialog(
-      context: context,
+      context: parentContext,
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Delete this status?'),
         content: const Text('This status will be deleted for everyone who received it.'),
@@ -192,15 +192,14 @@ class _StatusViewerScreenState extends State<StatusViewerScreen> with SingleTick
           TextButton(
             onPressed: () async {
               Navigator.pop(dialogCtx);
-              final statusProvider = Provider.of<StatusProvider>(context, listen: false);
+              final statusProvider = Provider.of<StatusProvider>(parentContext, listen: false);
               await statusProvider.deleteStatusItem(itemId);
 
-              if (mounted) {
-                if (_currentItems.length <= 1) {
-                  Navigator.pop(context);
-                } else {
-                  _nextStory();
-                }
+              if (!mounted) return;
+              if (_currentItems.length <= 1) {
+                Navigator.of(context).pop();
+              } else {
+                _nextStory();
               }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),

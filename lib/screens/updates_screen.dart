@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -25,9 +26,9 @@ class _UpdatesScreenState extends State<UpdatesScreen> with AutomaticKeepAliveCl
   @override
   bool get wantKeepAlive => true;
 
-  void _showMediaPickerOptions(BuildContext context) {
+  void _showMediaPickerOptions(BuildContext parentContext) {
     showModalBottomSheet(
-      context: context,
+      context: parentContext,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
@@ -46,12 +47,18 @@ class _UpdatesScreenState extends State<UpdatesScreen> with AutomaticKeepAliveCl
                   label: 'Camera',
                   onTap: () async {
                     Navigator.pop(ctx);
-                    final file = await _imagePickerService.pickFromCamera();
-                    if (file != null && mounted) {
+                    final xFile = await _imagePickerService.pickImageXFile(source: ImageSource.camera);
+                    if (xFile != null) {
+                      final bytes = await xFile.readAsBytes();
+                      if (!mounted) return;
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => StatusMediaPreviewScreen(file: file, mediaType: 'image'),
+                          builder: (_) => StatusMediaPreviewScreen(
+                            bytes: bytes,
+                            fileName: xFile.name,
+                            mediaType: 'image',
+                          ),
                         ),
                       );
                     }
@@ -63,12 +70,18 @@ class _UpdatesScreenState extends State<UpdatesScreen> with AutomaticKeepAliveCl
                   label: 'Gallery',
                   onTap: () async {
                     Navigator.pop(ctx);
-                    final file = await _imagePickerService.pickFromGallery();
-                    if (file != null && mounted) {
+                    final xFile = await _imagePickerService.pickImageXFile(source: ImageSource.gallery);
+                    if (xFile != null) {
+                      final bytes = await xFile.readAsBytes();
+                      if (!mounted) return;
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => StatusMediaPreviewScreen(file: file, mediaType: 'image'),
+                          builder: (_) => StatusMediaPreviewScreen(
+                            bytes: bytes,
+                            fileName: xFile.name,
+                            mediaType: 'image',
+                          ),
                         ),
                       );
                     }
@@ -80,12 +93,18 @@ class _UpdatesScreenState extends State<UpdatesScreen> with AutomaticKeepAliveCl
                   label: 'Video',
                   onTap: () async {
                     Navigator.pop(ctx);
-                    final file = await _imagePickerService.pickVideoFromGallery();
-                    if (file != null && mounted) {
+                    final xFile = await _imagePickerService.pickVideoXFile(source: ImageSource.gallery);
+                    if (xFile != null) {
+                      final bytes = await xFile.readAsBytes();
+                      if (!mounted) return;
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => StatusMediaPreviewScreen(file: file, mediaType: 'video'),
+                          builder: (_) => StatusMediaPreviewScreen(
+                            bytes: bytes,
+                            fileName: xFile.name,
+                            mediaType: 'video',
+                          ),
                         ),
                       );
                     }

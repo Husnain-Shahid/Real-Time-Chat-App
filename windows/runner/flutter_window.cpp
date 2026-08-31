@@ -1,5 +1,8 @@
 #include "flutter_window.h"
 
+#include <windows.h>
+#include <flutter/method_channel.h>
+#include <flutter/standard_method_codec.h>
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
@@ -25,6 +28,26 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+
+  // Native Battery Level MethodChannel for Windows
+  battery_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+      flutter_controller_->engine()->messenger(), "com.example.chat_application/battery",
+      &flutter::StandardMethodCodec::GetInstance());
+
+  battery_channel_->SetMethodCallHandler(
+      [](const flutter::MethodCall<flutter::EncodableValue>& call,
+         std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+        if (call.method_name() == "getBatteryLevel") {
+          SYSTEM_POWER_STATUS sps;
+          if (GetSystemPowerStatus(&sps) && sps.BatteryLifePercent != 255) {
+            result->Success(flutter::EncodableValue(static_cast<int>(sps.BatteryLifePercent)));
+          } else {
+            result->Error("UNAVAILABLE", "Battery level not available on this device.");
+          }
+        } else {
+          result->NotImplemented();
+        }
+      });
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {

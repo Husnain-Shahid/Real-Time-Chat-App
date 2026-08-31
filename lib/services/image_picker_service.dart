@@ -1,58 +1,56 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ImagePickerService {
   final ImagePicker _picker = ImagePicker();
 
-  Future<File?> pickFromGallery() async {
+  Future<XFile?> pickImageXFile({ImageSource source = ImageSource.gallery, int imageQuality = 80}) async {
     try {
       final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 80,
+        source: source,
+        imageQuality: imageQuality,
       );
-
       if (image == null || image.path.isEmpty) return null;
-      return File(image.path);
+      return image;
     } catch (e) {
-      print('Error picking from gallery: $e');
+      debugPrint('Error picking image: $e');
       return null;
     }
+  }
+
+  Future<XFile?> pickVideoXFile({ImageSource source = ImageSource.gallery}) async {
+    try {
+      final XFile? video = await _picker.pickVideo(source: source);
+      if (video == null || video.path.isEmpty) return null;
+      return video;
+    } catch (e) {
+      debugPrint('Error picking video: $e');
+      return null;
+    }
+  }
+
+  Future<File?> pickFromGallery() async {
+    final xFile = await pickImageXFile(source: ImageSource.gallery);
+    if (xFile == null) return null;
+    return !kIsWeb ? File(xFile.path) : null;
   }
 
   Future<File?> pickFromCamera() async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 80,
-      );
-
-      if (image == null || image.path.isEmpty) return null;
-      return File(image.path);
-    } catch (e) {
-      print('Error picking from camera: $e');
-      return null;
-    }
+    final xFile = await pickImageXFile(source: ImageSource.camera);
+    if (xFile == null) return null;
+    return !kIsWeb ? File(xFile.path) : null;
   }
 
   Future<File?> pickVideoFromGallery() async {
-    try {
-      final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
-      if (video == null || video.path.isEmpty) return null;
-      return File(video.path);
-    } catch (e) {
-      print('Error picking video from gallery: $e');
-      return null;
-    }
+    final xFile = await pickVideoXFile(source: ImageSource.gallery);
+    if (xFile == null) return null;
+    return !kIsWeb ? File(xFile.path) : null;
   }
 
   Future<File?> pickVideoFromCamera() async {
-    try {
-      final XFile? video = await _picker.pickVideo(source: ImageSource.camera);
-      if (video == null || video.path.isEmpty) return null;
-      return File(video.path);
-    } catch (e) {
-      print('Error picking video from camera: $e');
-      return null;
-    }
+    final xFile = await pickVideoXFile(source: ImageSource.camera);
+    if (xFile == null) return null;
+    return !kIsWeb ? File(xFile.path) : null;
   }
 }

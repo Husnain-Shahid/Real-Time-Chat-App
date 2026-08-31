@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../widget/battery_level_indicator.dart';
+import '../widget/responsive_layout.dart';
 import 'auth_screen.dart';
 import 'edit_profile_screen.dart';
 
@@ -617,9 +619,11 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance.collection('users').doc(currentUser!.uid).snapshots(),
-        builder: (context, snapshot) {
+      body: ResponsiveCenteredContainer(
+        maxWidth: 720,
+        child: StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance.collection('users').doc(currentUser!.uid).snapshots(),
+          builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
             return const Center(child: CircularProgressIndicator(color: Color(0xFF0078FF)));
           }
@@ -821,6 +825,14 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                       const SizedBox(height: 16),
                       const Divider(height: 1, thickness: 0.5, color: Color(0xFFE0E0E0)),
 
+                      // Native Device Battery Info
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                        child: BatteryLevelIndicator(),
+                      ),
+
+                      const Divider(height: 1, thickness: 0.5, color: Color(0xFFE0E0E0)),
+
                       // Settings Items List with Full Polish & Working BottomSheets
                       _buildSettingItem(
                         icon: Icons.key_outlined,
@@ -909,7 +921,8 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
           );
         },
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildSettingItem({

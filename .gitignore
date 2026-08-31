@@ -43,3 +43,12 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Sensitive API credentials and service accounts
+lib/services/fcm_v1_service.dart
+lib/firebase_options.dart
+*.env
+service-account*.json
+**/google-services.json
+**/GoogleService-Info.plist
+

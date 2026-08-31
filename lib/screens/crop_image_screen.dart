@@ -1,14 +1,18 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:path_provider/path_provider.dart';
 
 class CropImageScreen extends StatefulWidget {
-  final File imageFile;
+  final Uint8List? imageBytes;
+  final File? imageFile;
 
-  const CropImageScreen({super.key, required this.imageFile});
+  const CropImageScreen({
+    super.key,
+    this.imageBytes,
+    this.imageFile,
+  });
 
   @override
   State<CropImageScreen> createState() => _CropImageScreenState();
@@ -19,6 +23,24 @@ class _CropImageScreenState extends State<CropImageScreen> {
   final TransformationController _transformController = TransformationController();
   int _quarterTurns = 0;
   bool _isProcessing = false;
+  Uint8List? _loadedBytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBytes();
+  }
+
+  Future<void> _loadBytes() async {
+    if (widget.imageBytes != null) {
+      setState(() => _loadedBytes = widget.imageBytes);
+    } else if (widget.imageFile != null) {
+      if (!kIsWeb) {
+        final bytes = await widget.imageFile!.readAsBytes();
+        if (mounted) setState(() => _loadedBytes = bytes);
+      }
+    }
+  }
 
   void _rotateImage() {
     setState(() {
@@ -38,30 +60,26 @@ class _CropImageScreenState extends State<CropImageScreen> {
     try {
       final boundary = _cropAreaKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) {
-        if (mounted) Navigator.pop(context, widget.imageFile);
+        if (mounted) Navigator.pop(context, _loadedBytes);
         return;
       }
 
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) {
-        if (mounted) Navigator.pop(context, widget.imageFile);
+        if (mounted) Navigator.pop(context, _loadedBytes);
         return;
       }
 
       final Uint8List pngBytes = byteData.buffer.asUint8List();
-      final tempDir = await getTemporaryDirectory();
-      final String croppedPath = '${tempDir.path}/cropped_profile_${DateTime.now().millisecondsSinceEpoch}.png';
-      final croppedFile = File(croppedPath);
-      await croppedFile.writeAsBytes(pngBytes);
 
       if (mounted) {
-        Navigator.pop(context, croppedFile);
+        Navigator.pop(context, pngBytes);
       }
     } catch (e) {
       debugPrint('Error cropping image: $e');
       if (mounted) {
-        Navigator.pop(context, widget.imageFile);
+        Navigator.pop(context, _loadedBytes);
       }
     } finally {
       if (mounted) setState(() => _isProcessing = false);
@@ -77,7 +95,16 @@ class _CropImageScreenState extends State<CropImageScreen> {
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    final double cropBoxSize = screenSize.width * 0.85;
+    final double cropBoxSize = (screenSize.width * 0.85).clamp(240.0, 420.0);
+
+    if (_loadedBytes == null) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF0078FF)),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -125,8 +152,8 @@ class _CropImageScreenState extends State<CropImageScreen> {
                       boundaryMargin: const EdgeInsets.all(double.infinity),
                       child: RotatedBox(
                         quarterTurns: _quarterTurns,
-                        child: Image.file(
-                          widget.imageFile,
+                        child: Image.memory(
+                          _loadedBytes!,
                           fit: BoxFit.contain,
                         ),
                       ),

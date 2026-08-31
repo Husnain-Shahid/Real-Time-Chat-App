@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../models/chat_model.dart';
 import '../models/user_model.dart';
 import '../services/database_service.dart';
 
@@ -17,6 +18,18 @@ class HomeProvider extends ChangeNotifier {
 
   String _searchQuery = '';
   String get searchQuery => _searchQuery;
+
+  ChatModel? _activeDetailChat;
+  ChatModel? get activeDetailChat => _activeDetailChat;
+
+  String? _activeDetailReceiverId;
+  String? get activeDetailReceiverId => _activeDetailReceiverId;
+
+  void setActiveDetailChat(ChatModel? chat, String? receiverId) {
+    _activeDetailChat = chat;
+    _activeDetailReceiverId = receiverId;
+    notifyListeners();
+  }
 
   List<QueryDocumentSnapshot> _chatDocs = [];
   List<QueryDocumentSnapshot> get chatDocs => _filteredChatDocs;

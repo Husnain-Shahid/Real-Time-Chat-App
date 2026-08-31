@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/cloudinary_service.dart';
 import '../services/image_picker_service.dart';
@@ -53,7 +54,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _aboutController = TextEditingController(
       text: widget.userData['about'] ?? widget.userData['bio'] ?? 'Hey there! I am using WhatsApp.',
     );
-    _phoneController = TextEditingController(text: widget.userData['phoneNumber'] ?? '+92 340 3912622');
+    _phoneController = TextEditingController(text: widget.userData['phoneNumber'] ?? '+92 300 1234567');
     _profileImage = widget.userData['profileImage'] ?? '';
     _uniqueId = widget.userData['uniqueId'] ?? '';
     _email = widget.userData['email'] ?? FirebaseAuth.instance.currentUser?.email ?? '';
@@ -68,23 +69,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickAndUploadPhoto(bool fromCamera) async {
-    final File? pickedFile = fromCamera
-        ? await _pickerService.pickFromCamera()
-        : await _pickerService.pickFromGallery();
+    final XFile? pickedFile = await _pickerService.pickImageXFile(
+      source: fromCamera ? ImageSource.camera : ImageSource.gallery,
+    );
 
     if (pickedFile == null) return;
 
+    final Uint8List imageBytes = await pickedFile.readAsBytes();
     if (!mounted) return;
 
     // Open CropImageScreen so user can zoom, rotate, crop before upload
-    final File? croppedFile = await Navigator.push<File?>(
+    final dynamic croppedResult = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CropImageScreen(imageFile: pickedFile),
+        builder: (context) => CropImageScreen(imageBytes: imageBytes),
       ),
     );
 
-    if (croppedFile == null) return;
+    if (croppedResult == null) return;
+    final Uint8List finalBytes = croppedResult is Uint8List
+        ? croppedResult
+        : (croppedResult is File ? await croppedResult.readAsBytes() : imageBytes);
 
     setState(() {
       _isUploadingPhoto = true;
@@ -93,7 +98,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     try {
       final uploadRes = await _cloudinaryService.uploadImage(
-        image: croppedFile,
+        imageBytes: finalBytes,
+        fileName: 'profile_${DateTime.now().millisecondsSinceEpoch}.png',
         onProgress: (p) {
           if (mounted) setState(() => _uploadProgress = p);
         },

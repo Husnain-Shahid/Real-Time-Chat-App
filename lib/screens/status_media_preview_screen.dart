@@ -1,16 +1,21 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import '../provider/status_provider.dart';
 
 class StatusMediaPreviewScreen extends StatefulWidget {
-  final File file;
+  final File? file;
+  final Uint8List? bytes;
+  final String? fileName;
   final String mediaType; // 'image' | 'video'
 
   const StatusMediaPreviewScreen({
     super.key,
-    required this.file,
+    this.file,
+    this.bytes,
+    this.fileName,
     required this.mediaType,
   });
 
@@ -26,8 +31,8 @@ class _StatusMediaPreviewScreenState extends State<StatusMediaPreviewScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.mediaType == 'video') {
-      _videoController = VideoPlayerController.file(widget.file)
+    if (widget.mediaType == 'video' && widget.file != null && !kIsWeb) {
+      _videoController = VideoPlayerController.file(widget.file!)
         ..initialize().then((_) {
           if (mounted) {
             setState(() => _isVideoInitialized = true);
@@ -51,6 +56,8 @@ class _StatusMediaPreviewScreenState extends State<StatusMediaPreviewScreen> {
 
     final success = await statusProvider.publishMediaStatus(
       file: widget.file,
+      bytes: widget.bytes,
+      fileName: widget.fileName,
       mediaType: widget.mediaType,
       caption: caption.isNotEmpty ? caption : null,
     );
@@ -70,6 +77,38 @@ class _StatusMediaPreviewScreenState extends State<StatusMediaPreviewScreen> {
   Widget build(BuildContext context) {
     final statusProvider = Provider.of<StatusProvider>(context);
 
+    Widget mediaWidget;
+    if (widget.mediaType == 'video') {
+      mediaWidget = _isVideoInitialized && _videoController != null
+          ? AspectRatio(
+              aspectRatio: _videoController!.value.aspectRatio,
+              child: VideoPlayer(_videoController!),
+            )
+          : const Center(
+              child: CircularProgressIndicator(color: Color(0xFF0078FF)),
+            );
+    } else {
+      if (widget.bytes != null) {
+        mediaWidget = Image.memory(
+          widget.bytes!,
+          fit: BoxFit.contain,
+          width: double.infinity,
+          height: double.infinity,
+        );
+      } else if (widget.file != null && !kIsWeb) {
+        mediaWidget = Image.file(
+          widget.file!,
+          fit: BoxFit.contain,
+          width: double.infinity,
+          height: double.infinity,
+        );
+      } else {
+        mediaWidget = const Center(
+          child: Icon(Icons.image, color: Colors.white54, size: 64),
+        );
+      }
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -77,21 +116,7 @@ class _StatusMediaPreviewScreenState extends State<StatusMediaPreviewScreen> {
           children: [
             // Media Preview
             Center(
-              child: widget.mediaType == 'video'
-                  ? (_isVideoInitialized
-                      ? AspectRatio(
-                          aspectRatio: _videoController!.value.aspectRatio,
-                          child: VideoPlayer(_videoController!),
-                        )
-                      : const Center(
-                          child: CircularProgressIndicator(color: Color(0xFF0078FF)),
-                        ))
-                  : Image.file(
-                      widget.file,
-                      fit: BoxFit.contain,
-                      width: double.infinity,
-                      height: double.infinity,
-                    ),
+              child: mediaWidget,
             ),
 
             // Top Bar

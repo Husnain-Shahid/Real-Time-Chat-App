@@ -1,5 +1,7 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import '../services/cloudinary_service.dart';
@@ -16,6 +18,12 @@ class MediaProvider extends ChangeNotifier {
   File? _selectedFile;
   File? get selectedFile => _selectedFile;
 
+  Uint8List? _selectedBytes;
+  Uint8List? get selectedBytes => _selectedBytes;
+
+  String? _selectedFileName;
+  String? get selectedFileName => _selectedFileName;
+
   bool _isUploading = false;
   bool get isUploading => _isUploading;
 
@@ -30,6 +38,9 @@ class MediaProvider extends ChangeNotifier {
 
   File? _recordedVoiceFile;
   File? get recordedVoiceFile => _recordedVoiceFile;
+
+  Uint8List? _recordedVoiceBytes;
+  Uint8List? get recordedVoiceBytes => _recordedVoiceBytes;
 
   Duration? _recordedVoiceDuration;
   Duration? get recordedVoiceDuration => _recordedVoiceDuration;
@@ -53,36 +64,44 @@ class MediaProvider extends ChangeNotifier {
   }
 
   Future<void> pickImageGallery() async {
-    final file = await _imagePickerService.pickFromGallery();
-    if (file != null) {
-      _selectedFile = file;
+    final xFile = await _imagePickerService.pickImageXFile(source: ImageSource.gallery);
+    if (xFile != null) {
+      _selectedBytes = await xFile.readAsBytes();
+      _selectedFileName = xFile.name;
+      _selectedFile = !kIsWeb ? File(xFile.path) : null;
       _fileType = 'image';
       notifyListeners();
     }
   }
 
   Future<void> pickImageCamera() async {
-    final file = await _imagePickerService.pickFromCamera();
-    if (file != null) {
-      _selectedFile = file;
+    final xFile = await _imagePickerService.pickImageXFile(source: ImageSource.camera);
+    if (xFile != null) {
+      _selectedBytes = await xFile.readAsBytes();
+      _selectedFileName = xFile.name;
+      _selectedFile = !kIsWeb ? File(xFile.path) : null;
       _fileType = 'image';
       notifyListeners();
     }
   }
 
   Future<void> pickVideoGallery() async {
-    final file = await _imagePickerService.pickVideoFromGallery();
-    if (file != null) {
-      _selectedFile = file;
+    final xFile = await _imagePickerService.pickVideoXFile(source: ImageSource.gallery);
+    if (xFile != null) {
+      _selectedBytes = await xFile.readAsBytes();
+      _selectedFileName = xFile.name;
+      _selectedFile = !kIsWeb ? File(xFile.path) : null;
       _fileType = 'video';
       notifyListeners();
     }
   }
 
   Future<void> pickVideoCamera() async {
-    final file = await _imagePickerService.pickVideoFromCamera();
-    if (file != null) {
-      _selectedFile = file;
+    final xFile = await _imagePickerService.pickVideoXFile(source: ImageSource.camera);
+    if (xFile != null) {
+      _selectedBytes = await xFile.readAsBytes();
+      _selectedFileName = xFile.name;
+      _selectedFile = !kIsWeb ? File(xFile.path) : null;
       _fileType = 'video';
       notifyListeners();
     }
@@ -100,8 +119,11 @@ class MediaProvider extends ChangeNotifier {
       }
 
       await clearRecordedVoice(notify: false);
-      final tempDir = await getTemporaryDirectory();
-      final filePath = '${tempDir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      String filePath = '';
+      if (!kIsWeb) {
+        final tempDir = await getTemporaryDirectory();
+        filePath = '${tempDir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      }
 
       await _audioRecorder.start(
         const RecordConfig(
@@ -126,7 +148,7 @@ class MediaProvider extends ChangeNotifier {
   }
 
   Future<bool> stopVoiceRecording() async {
-    if (!_isVoiceRecording) return _recordedVoiceFile != null;
+    if (!_isVoiceRecording) return (_recordedVoiceFile != null || _recordedVoiceBytes != null);
 
     try {
       final path = await _audioRecorder.stop();
@@ -139,22 +161,40 @@ class MediaProvider extends ChangeNotifier {
         return false;
       }
 
-      final file = File(path);
-      if (!await file.exists()) {
-        _setError('Recorded file not found');
+      if (kIsWeb) {
+        try {
+          final dio = Dio();
+          final res = await dio.get<List<int>>(path, options: Options(responseType: ResponseType.bytes));
+          if (res.data != null && res.data!.isNotEmpty) {
+            _recordedVoiceBytes = Uint8List.fromList(res.data!);
+            _recordedVoiceDuration = startedAt == null ? null : DateTime.now().difference(startedAt);
+            notifyListeners();
+            return true;
+          }
+        } catch (e) {
+          debugPrint('Error reading web voice recording: $e');
+        }
+        _setError('Recorded audio not found');
         return false;
-      }
+      } else {
+        final file = File(path);
+        if (!await file.exists()) {
+          _setError('Recorded file not found');
+          return false;
+        }
 
-      final length = await file.length();
-      if (length == 0) {
-        _setError('Recorded file is empty');
-        return false;
-      }
+        final length = await file.length();
+        if (length == 0) {
+          _setError('Recorded file is empty');
+          return false;
+        }
 
-      _recordedVoiceFile = file;
-      _recordedVoiceDuration = startedAt == null ? null : DateTime.now().difference(startedAt);
-      notifyListeners();
-      return true;
+        _recordedVoiceFile = file;
+        _recordedVoiceBytes = await file.readAsBytes();
+        _recordedVoiceDuration = startedAt == null ? null : DateTime.now().difference(startedAt);
+        notifyListeners();
+        return true;
+      }
     } catch (e) {
       _isVoiceRecording = false;
       _voiceRecordingStartedAt = null;
@@ -209,8 +249,9 @@ class MediaProvider extends ChangeNotifier {
   Future<void> clearRecordedVoice({bool notify = true}) async {
     final file = _recordedVoiceFile;
     _recordedVoiceFile = null;
+    _recordedVoiceBytes = null;
     _recordedVoiceDuration = null;
-    if (file != null && await file.exists()) {
+    if (file != null && !kIsWeb && await file.exists()) {
       try {
         await file.delete();
       } catch (e) {
@@ -224,6 +265,8 @@ class MediaProvider extends ChangeNotifier {
 
   void clearMedia() {
     _selectedFile = null;
+    _selectedBytes = null;
+    _selectedFileName = null;
     _fileType = null;
     _uploadProgress = 0.0;
     notifyListeners();
@@ -234,7 +277,7 @@ class MediaProvider extends ChangeNotifier {
     String receiverName,
     String caption,
   ) async {
-    if (_selectedFile == null || _isUploading) return;
+    if ((_selectedBytes == null && _selectedFile == null) || _isUploading) return;
 
     final mediaType = _fileType ?? 'image';
     _errorMessage = null;
@@ -246,22 +289,34 @@ class MediaProvider extends ChangeNotifier {
     try {
       Map<String, String?>? uploadResult;
 
-      if (mediaType == 'video') {
-        uploadResult = await _cloudinaryService.uploadVideo(
-          video: _selectedFile!,
+      if (_selectedBytes != null) {
+        uploadResult = await _cloudinaryService.uploadBytes(
+          bytes: _selectedBytes!,
+          fileName: _selectedFileName ?? (mediaType == 'video' ? 'video.mp4' : 'image.png'),
+          mediaType: mediaType,
           onProgress: (progress) {
             _uploadProgress = progress;
             notifyListeners();
           },
         );
-      } else {
-        uploadResult = await _cloudinaryService.uploadImage(
-          image: _selectedFile!,
-          onProgress: (progress) {
-            _uploadProgress = progress;
-            notifyListeners();
-          },
-        );
+      } else if (_selectedFile != null) {
+        if (mediaType == 'video') {
+          uploadResult = await _cloudinaryService.uploadVideo(
+            video: _selectedFile!,
+            onProgress: (progress) {
+              _uploadProgress = progress;
+              notifyListeners();
+            },
+          );
+        } else {
+          uploadResult = await _cloudinaryService.uploadImage(
+            image: _selectedFile!,
+            onProgress: (progress) {
+              _uploadProgress = progress;
+              notifyListeners();
+            },
+          );
+        }
       }
 
       if (uploadResult != null && uploadResult['secure_url'] != null) {
@@ -304,20 +359,33 @@ class MediaProvider extends ChangeNotifier {
     required String receiverId,
     String caption = '',
   }) async {
-    if (_isUploadingVoice || _recordedVoiceFile == null) return false;
+    if (_isUploadingVoice || (_recordedVoiceFile == null && _recordedVoiceBytes == null)) return false;
     _isUploadingVoice = true;
     _uploadProgress = 0.0;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final uploadResult = await _cloudinaryService.uploadAudio(
-        audio: _recordedVoiceFile!,
-        onProgress: (progress) {
-          _uploadProgress = progress;
-          notifyListeners();
-        },
-      );
+      Map<String, String?>? uploadResult;
+      if (_recordedVoiceBytes != null) {
+        uploadResult = await _cloudinaryService.uploadBytes(
+          bytes: _recordedVoiceBytes!,
+          fileName: 'voice_${DateTime.now().millisecondsSinceEpoch}.m4a',
+          mediaType: 'voice',
+          onProgress: (progress) {
+            _uploadProgress = progress;
+            notifyListeners();
+          },
+        );
+      } else if (_recordedVoiceFile != null) {
+        uploadResult = await _cloudinaryService.uploadAudio(
+          audio: _recordedVoiceFile!,
+          onProgress: (progress) {
+            _uploadProgress = progress;
+            notifyListeners();
+          },
+        );
+      }
 
       final voiceUrl = uploadResult?['secure_url'];
       if (voiceUrl == null || voiceUrl.isEmpty) {

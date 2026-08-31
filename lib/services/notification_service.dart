@@ -124,59 +124,63 @@ class NotificationService {
   static const String _channelName = 'Chat Messages';
   static const String _channelDescription = 'Incoming chat message notifications';
 
+  bool get _isMobileOrDarwin => !kIsWeb && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS);
+
   Future<void> initialize(GlobalKey<NavigatorState> navKey) async {
     navigatorKey = navKey;
 
-    // 1. Android Initialization Settings
-    const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    if (_isMobileOrDarwin) {
+      // 1. Android Initialization Settings
+      const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    // 2. iOS/Darwin Initialization Settings
-    const DarwinInitializationSettings darwinSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
+      // 2. iOS/Darwin Initialization Settings
+      const DarwinInitializationSettings darwinSettings = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
 
-    // 3. Linux Settings
-    const LinuxInitializationSettings linuxSettings = LinuxInitializationSettings(
-      defaultActionName: 'Open notification',
-    );
+      // 3. Linux Settings
+      const LinuxInitializationSettings linuxSettings = LinuxInitializationSettings(
+        defaultActionName: 'Open notification',
+      );
 
-    const InitializationSettings initSettings = InitializationSettings(
-      android: androidSettings,
-      iOS: darwinSettings,
-      macOS: darwinSettings,
-      linux: linuxSettings,
-    );
+      const InitializationSettings initSettings = InitializationSettings(
+        android: androidSettings,
+        iOS: darwinSettings,
+        macOS: darwinSettings,
+        linux: linuxSettings,
+      );
 
-    await _localNotifications.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: _onNotificationTapped,
-    );
+      await _localNotifications.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: _onNotificationTapped,
+      );
 
-    // 4. Create High-Priority Notification Channel for Android
-    if (!kIsWeb && Platform.isAndroid) {
-      final androidPlugin = _localNotifications.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
-      if (androidPlugin != null) {
-        await androidPlugin.createNotificationChannel(
-          const AndroidNotificationChannel(
-            _channelId,
-            _channelName,
-            description: _channelDescription,
-            importance: Importance.max,
-            playSound: true,
-            enableVibration: true,
-            showBadge: true,
-          ),
-        );
+      // 4. Create High-Priority Notification Channel for Android
+      if (Platform.isAndroid) {
+        final androidPlugin = _localNotifications.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+        if (androidPlugin != null) {
+          await androidPlugin.createNotificationChannel(
+            const AndroidNotificationChannel(
+              _channelId,
+              _channelName,
+              description: _channelDescription,
+              importance: Importance.max,
+              playSound: true,
+              enableVibration: true,
+              showBadge: true,
+            ),
+          );
+        }
       }
+
+      // 5. Setup Firebase Cloud Messaging (FCM)
+      await _setupFirebaseMessaging();
     }
 
-    // 5. Setup Firebase Cloud Messaging (FCM)
-    await _setupFirebaseMessaging();
-
-    // 6. If already logged in on launch, start listening immediately
+    // 6. If already logged in on launch, start listening immediately (In-App Firestore stream works on all platforms)
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null) {
       startListening(currentUser.uid);
@@ -195,6 +199,7 @@ class NotificationService {
   }
 
   Future<void> _setupFirebaseMessaging() async {
+    if (!_isMobileOrDarwin) return;
     try {
       // Request FCM Permissions (Critical for iOS and Android 13+)
       final NotificationSettings settings = await FirebaseMessaging.instance.requestPermission(
@@ -289,6 +294,7 @@ class NotificationService {
   }
 
   Future<void> _syncFCMToken(String userId) async {
+    if (!_isMobileOrDarwin) return;
     try {
       final String? token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
@@ -381,6 +387,7 @@ class NotificationService {
   }
 
   Future<void> requestPermission() async {
+    if (!_isMobileOrDarwin) return;
     try {
       await FirebaseMessaging.instance.requestPermission(
         alert: true,
@@ -565,7 +572,7 @@ class NotificationService {
         messageText: messageText,
         isGroup: isGroup,
       );
-    } else {
+    } else if (!kIsWeb) {
       // 2. WHEN APP IS CLOSED / BACKGROUND / SCREEN LOCKED:
       // Show System Notification WITH Sender Picture / Avatar!
       AndroidBitmap<Object>? largeIcon;

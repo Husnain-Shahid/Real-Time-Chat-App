@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 
 class CloudinaryService {
   static const String cloudName = 'jwwboehk';
@@ -15,23 +16,21 @@ class CloudinaryService {
 
   final Dio _dio = Dio();
 
-  Future<Map<String, String?>?> uploadMedia({
-    required File file,
+  Future<Map<String, String?>?> uploadBytes({
+    required Uint8List bytes,
+    required String fileName,
     required String mediaType,
     required Function(double progress) onProgress,
   }) async {
     try {
-      final endpoint = mediaType == 'video'
+      final endpoint = mediaType == 'video' || mediaType == 'voice' || mediaType == 'audio'
           ? 'https://api.cloudinary.com/v1_1/$cloudName/video/upload'
-          : mediaType == 'voice' || mediaType == 'audio'
-              ? 'https://api.cloudinary.com/v1_1/$cloudName/video/upload'
-              : 'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
-      final fileName = file.path.split(RegExp(r'[\\/]+')).last;
+          : 'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
 
       final formData = FormData.fromMap({
         'upload_preset': uploadPreset,
-        'file': await MultipartFile.fromFile(
-          file.path,
+        'file': MultipartFile.fromBytes(
+          bytes,
           filename: fileName,
         ),
       });
@@ -61,25 +60,106 @@ class CloudinaryService {
     }
   }
 
-  Future<Map<String, String?>?> uploadImage({
-    required File image,
+  Future<Map<String, String?>?> uploadXFile({
+    required XFile xFile,
+    required String mediaType,
     required Function(double progress) onProgress,
   }) async {
-    return uploadMedia(file: image, mediaType: 'image', onProgress: onProgress);
+    try {
+      final bytes = await xFile.readAsBytes();
+      final fileName = xFile.name.isNotEmpty ? xFile.name : 'upload_${DateTime.now().millisecondsSinceEpoch}';
+      return uploadBytes(
+        bytes: bytes,
+        fileName: fileName,
+        mediaType: mediaType,
+        onProgress: onProgress,
+      );
+    } catch (e) {
+      debugPrint('Cloudinary uploadXFile error: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, String?>?> uploadMedia({
+    File? file,
+    Uint8List? bytes,
+    String? fileName,
+    required String mediaType,
+    required Function(double progress) onProgress,
+  }) async {
+    try {
+      if (bytes != null) {
+        return uploadBytes(
+          bytes: bytes,
+          fileName: fileName ?? 'file_${DateTime.now().millisecondsSinceEpoch}',
+          mediaType: mediaType,
+          onProgress: onProgress,
+        );
+      }
+
+      if (file != null) {
+        if (!kIsWeb) {
+          final fileBytes = await file.readAsBytes();
+          final name = fileName ?? file.path.split(RegExp(r'[\\/]+')).last;
+          return uploadBytes(
+            bytes: fileBytes,
+            fileName: name,
+            mediaType: mediaType,
+            onProgress: onProgress,
+          );
+        }
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint('Cloudinary upload error: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, String?>?> uploadImage({
+    File? image,
+    Uint8List? imageBytes,
+    String? fileName,
+    required Function(double progress) onProgress,
+  }) async {
+    return uploadMedia(
+      file: image,
+      bytes: imageBytes,
+      fileName: fileName ?? 'image.png',
+      mediaType: 'image',
+      onProgress: onProgress,
+    );
   }
 
   Future<Map<String, String?>?> uploadVideo({
-    required File video,
+    File? video,
+    Uint8List? videoBytes,
+    String? fileName,
     required Function(double progress) onProgress,
   }) async {
-    return uploadMedia(file: video, mediaType: 'video', onProgress: onProgress);
+    return uploadMedia(
+      file: video,
+      bytes: videoBytes,
+      fileName: fileName ?? 'video.mp4',
+      mediaType: 'video',
+      onProgress: onProgress,
+    );
   }
 
   Future<Map<String, String?>?> uploadAudio({
-    required File audio,
+    File? audio,
+    Uint8List? audioBytes,
+    String? fileName,
     required Function(double progress) onProgress,
   }) async {
-    return uploadMedia(file: audio, mediaType: 'voice', onProgress: onProgress);
+    return uploadMedia(
+      file: audio,
+      bytes: audioBytes,
+      fileName: fileName ?? 'audio.m4a',
+      mediaType: 'voice',
+      onProgress: onProgress,
+    );
   }
 
   /// Extracts public_id from a Cloudinary URL

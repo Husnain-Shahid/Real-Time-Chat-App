@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'forgot_password_screen.dart';
 import 'home_screen.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import '../services/database_service.dart';
+import '../services/auth_service.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -38,6 +37,8 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
+  final AuthService _authService = AuthService();
+
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       if (!isLoginSelected && !_agreeToTerms) {
@@ -55,26 +56,17 @@ class _AuthScreenState extends State<AuthScreen> {
       try {
         if (isLoginSelected) {
           // --- LOGIN LOGIC ---
-          UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-            email: _emailController.text.trim(),
-            password: _passwordController.text.trim(),
+          await _authService.signInWithEmailAndPassword(
+            email: _emailController.text,
+            password: _passwordController.text,
           );
-          if (userCredential.user != null) {
-            await DatabaseService().ensureUserProfileExists(userCredential.user!);
-          }
         } else {
           // --- SIGN UP LOGIC ---
-          UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-            email: _emailController.text.trim(),
-            password: _passwordController.text.trim(),
+          await _authService.signUpWithEmailAndPassword(
+            email: _emailController.text,
+            password: _passwordController.text,
+            name: _nameController.text,
           );
-
-          if (userCredential.user != null) {
-            await DatabaseService().ensureUserProfileExists(
-              userCredential.user!,
-              customName: _nameController.text.trim(),
-            );
-          }
         }
 
         // Navigate to Home upon success
@@ -105,39 +97,18 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 1. Trigger the Google Authentication flow
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      final userCredential = await _authService.signInWithGoogle();
 
-      if (googleUser == null) {
-        // User canceled the sign-in
-        setState(() => _isLoading = false);
+      if (userCredential == null) {
+        // User cancelled sign in
         return;
       }
 
-      // 2. Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-      // 3. Create a new credential for Firebase
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      // 4. Sign in to Firebase with the credential
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-      User? user = userCredential.user;
-
-      if (user != null) {
-        // 5. Ensure complete profile with Unique Chat ID exists in Firestore
-        await DatabaseService().ensureUserProfileExists(user);
-
-        // 6. Navigate to Home
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-          );
-        }
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {

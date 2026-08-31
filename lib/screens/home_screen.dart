@@ -7,6 +7,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../models/chat_model.dart';
 import '../provider/home_provider.dart';
 import '../widget/custom_nav_bar.dart';
+import '../widget/battery_level_indicator.dart';
+import '../widget/responsive_layout.dart';
 import '../services/database_service.dart';
 import '../services/notification_service.dart';
 import 'chat_screen.dart';
@@ -73,10 +75,177 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
   void _onBottomNavTapped(int index) {
     final homeProvider = Provider.of<HomeProvider>(context, listen: false);
     homeProvider.setBottomNavIndex(index);
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  Widget _buildTabletNavRail(BuildContext context, HomeProvider homeProvider) {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final totalUnread = homeProvider.totalUnreadChatsCount;
+
+    return Container(
+      width: 72,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F9FC),
+        border: Border(
+          right: BorderSide(color: Colors.grey.shade200, width: 1),
+        ),
+      ),
+      child: LayoutBuilder(
+        builder: (context, railConstraints) {
+          return SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: railConstraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 12),
+                    // App Logo
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0078FF), Color(0xFF00C6FF)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0078FF).withValues(alpha: 0.25),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 22),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // Nav Item 0: Chats
+                    _buildRailNavItem(
+                      icon: Icons.chat_bubble_rounded,
+                      label: 'Chats',
+                      isSelected: homeProvider.currentIndex == 0,
+                      badgeCount: totalUnread,
+                      onTap: () => homeProvider.setBottomNavIndex(0),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Nav Item 1: Updates
+                    _buildRailNavItem(
+                      icon: Icons.update_rounded,
+                      label: 'Updates',
+                      isSelected: homeProvider.currentIndex == 1,
+                      onTap: () => homeProvider.setBottomNavIndex(1),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Nav Item 2: Calls
+                    _buildRailNavItem(
+                      icon: Icons.call_rounded,
+                      label: 'Calls',
+                      isSelected: homeProvider.currentIndex == 2,
+                      onTap: () => homeProvider.setBottomNavIndex(2),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Nav Item 3: Profile (with user avatar)
+                    _buildRailNavItem(
+                      icon: Icons.person_rounded,
+                      label: 'Profile',
+                      isSelected: homeProvider.currentIndex == 3,
+                      avatarUrl: currentUser?.photoURL,
+                      onTap: () => homeProvider.setBottomNavIndex(3),
+                    ),
+
+                    const Spacer(),
+
+                    // Battery Indicator in Sidebar Bottom
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                      child: BatteryLevelIndicator(compact: true),
+                    ),
+                    const SizedBox(height: 6),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildRailNavItem({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    int badgeCount = 0,
+    String? avatarUrl,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF0078FF).withValues(alpha: 0.12) : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+            border: isSelected ? Border.all(color: const Color(0xFF0078FF).withValues(alpha: 0.3), width: 1) : null,
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              if (avatarUrl != null && avatarUrl.isNotEmpty)
+                CircleAvatar(
+                  radius: 14,
+                  backgroundImage: CachedNetworkImageProvider(avatarUrl),
+                  backgroundColor: const Color(0xFFE5F1FF),
+                )
+              else
+                Icon(
+                  icon,
+                  color: isSelected ? const Color(0xFF0078FF) : Colors.grey.shade600,
+                  size: 24,
+                ),
+              if (badgeCount > 0)
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF0078FF),
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    child: Text(
+                      badgeCount > 9 ? '9+' : '$badgeCount',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -97,17 +266,65 @@ class _HomeScreenContentState extends State<_HomeScreenContent> {
       });
     }
 
-    return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: _onPageChanged,
-        physics: const ClampingScrollPhysics(),
-        children: _screens,
-      ),
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: homeProvider.currentIndex,
-        onTap: _onBottomNavTapped,
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isTablet = constraints.maxWidth >= ResponsiveBreakpoints.tabletMin;
+
+        if (isTablet) {
+          final activeChat = homeProvider.activeDetailChat;
+          final activeReceiverId = homeProvider.activeDetailReceiverId;
+
+          return Scaffold(
+            backgroundColor: Colors.white,
+            body: Row(
+              children: [
+                // 1. Tablet Navigation Sidebar
+                _buildTabletNavRail(context, homeProvider),
+
+                // 2. Master Pane (Sidebar List / Active Tab)
+                SizedBox(
+                  width: constraints.maxWidth > 1100 ? 410 : 350,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border(
+                        right: BorderSide(color: Colors.grey.shade200, width: 1),
+                      ),
+                    ),
+                    child: _screens[homeProvider.currentIndex],
+                  ),
+                ),
+
+                // 3. Detail Pane (Active Chat or Welcome Screen)
+                Expanded(
+                  child: activeChat != null && activeReceiverId != null
+                      ? ChatScreen(
+                          key: ValueKey(activeReceiverId),
+                          chat: activeChat,
+                          receiverId: activeReceiverId,
+                          isEmbedded: true,
+                        )
+                      : const _TabletWelcomePlaceholder(),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Mobile Layout
+        return Scaffold(
+          body: PageView(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            physics: const ClampingScrollPhysics(),
+            children: _screens,
+          ),
+          bottomNavigationBar: CustomBottomNavBar(
+            currentIndex: homeProvider.currentIndex,
+            onTap: _onBottomNavTapped,
+          ),
+        );
+      },
     );
   }
 }
@@ -254,6 +471,8 @@ class _ChatHomeViewState extends State<ChatHomeView> with AutomaticKeepAliveClie
                 ),
               ),
               actions: [
+                const BatteryLevelIndicator(compact: true),
+                const SizedBox(width: 4),
                 IconButton(
                   icon: const Icon(Icons.camera_alt_outlined, color: Colors.black87),
                   onPressed: () {},
@@ -439,7 +658,10 @@ class _ChatHomeViewState extends State<ChatHomeView> with AutomaticKeepAliveClie
                             isGroup: isGroup,
                           );
 
-                          final isSelected = homeProvider.selectedChatRoomId == chatRoomDoc.id;
+                          final isMultiSelected = homeProvider.selectedChatRoomId == chatRoomDoc.id;
+                          final isTablet = MediaQuery.of(context).size.width >= ResponsiveBreakpoints.tabletMin;
+                          final isTabletActive = isTablet && (homeProvider.activeDetailReceiverId == receiverId);
+                          final isSelected = isMultiSelected || isTabletActive;
 
                           return _ChatListTile(
                             chat: chat,
@@ -453,7 +675,7 @@ class _ChatHomeViewState extends State<ChatHomeView> with AutomaticKeepAliveClie
                             },
                             onTap: () {
                               if (homeProvider.isSelectingChat) {
-                                if (isSelected) {
+                                if (isMultiSelected) {
                                   homeProvider.clearChatSelection();
                                 } else {
                                   homeProvider.selectChat(chatRoomDoc.id);
@@ -462,17 +684,22 @@ class _ChatHomeViewState extends State<ChatHomeView> with AutomaticKeepAliveClie
                               }
 
                               _databaseService.markMessagesAsRead(receiverId);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ChatScreen(
-                                    chat: chat,
-                                    receiverId: receiverId,
+
+                              if (isTablet) {
+                                homeProvider.setActiveDetailChat(chat, receiverId);
+                              } else {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ChatScreen(
+                                      chat: chat,
+                                      receiverId: receiverId,
+                                    ),
                                   ),
-                                ),
-                              ).then((_) {
-                                _databaseService.markMessagesAsRead(receiverId);
-                              });
+                                ).then((_) {
+                                  _databaseService.markMessagesAsRead(receiverId);
+                                });
+                              }
                             },
                           );
                         },
@@ -802,6 +1029,89 @@ class PlaceholderScreen extends StatelessWidget {
               style: TextStyle(color: Colors.grey[600]),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TabletWelcomePlaceholder extends StatelessWidget {
+  const _TabletWelcomePlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFFF9FAFB),
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Logo / Icon Container
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE5F1FF),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF0078FF).withValues(alpha: 0.2), width: 2),
+                ),
+                child: const Icon(
+                  Icons.devices_rounded,
+                  size: 50,
+                  color: Color(0xFF0078FF),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Chattrix for Tablet & Web',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Text(
+                  'Send and receive real-time messages without keeping your phone connected. Select a conversation from the sidebar to start chatting.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    color: Colors.grey[600],
+                    height: 1.5,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              // Battery Status Card
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 360),
+                child: const BatteryLevelIndicator(),
+              ),
+
+              const SizedBox(height: 40),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.lock_outline, size: 14, color: Colors.grey[500]),
+                  const SizedBox(width: 6),
+                  Text(
+                    'End-to-end encrypted messaging',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -31,6 +31,53 @@ jobs:
       - name: Verify Flutter Installation
         run: flutter --version
 
+      - name: Setup Mock/Placeholder Configs for CI
+        run: |
+          mkdir -p lib/services
+          
+          # Create placeholder firebase_options.dart if not present (since ignored in git)
+          if [ ! -f "lib/firebase_options.dart" ]; then
+            cat << 'EOF' > lib/firebase_options.dart
+          import 'package:flutter/foundation.dart';
+          import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+
+          class DefaultFirebaseOptions {
+            static FirebaseOptions get currentPlatform {
+              return const FirebaseOptions(
+                apiKey: 'ci-dummy-api-key',
+                appId: '1:1234567890:web:dummy',
+                messagingSenderId: '1234567890',
+                projectId: 'chat-application-ci',
+              );
+            }
+          }
+          EOF
+          fi
+
+          # Create placeholder fcm_v1_service.dart if not present (since ignored in git)
+          if [ ! -f "lib/services/fcm_v1_service.dart" ]; then
+            cat << 'EOF' > lib/services/fcm_v1_service.dart
+          class FCMV1Service {
+            static final FCMV1Service instance = FCMV1Service._internal();
+            FCMV1Service._internal();
+
+            Future<bool> sendV1PushNotification({
+              required String targetToken,
+              required String senderName,
+              String? senderImage,
+              required String messageText,
+              required String chatRoomId,
+              required String receiverId,
+              required String senderId,
+              String? mediaType,
+              String? mediaUrl,
+            }) async {
+              return true;
+            }
+          }
+          EOF
+          fi
+
       - name: Install Project Dependencies
         run: flutter pub get
 

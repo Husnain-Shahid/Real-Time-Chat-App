@@ -68,7 +68,7 @@ class CloudinaryService {
     try {
       final bytes = await xFile.readAsBytes();
       final fileName = xFile.name.isNotEmpty ? xFile.name : 'upload_${DateTime.now().millisecondsSinceEpoch}';
-      return uploadBytes(
+      return await uploadBytes(
         bytes: bytes,
         fileName: fileName,
         mediaType: mediaType,
@@ -89,7 +89,7 @@ class CloudinaryService {
   }) async {
     try {
       if (bytes != null) {
-        return uploadBytes(
+        return await uploadBytes(
           bytes: bytes,
           fileName: fileName ?? 'file_${DateTime.now().millisecondsSinceEpoch}',
           mediaType: mediaType,
@@ -101,7 +101,7 @@ class CloudinaryService {
         if (!kIsWeb) {
           final fileBytes = await file.readAsBytes();
           final name = fileName ?? file.path.split(RegExp(r'[\\/]+')).last;
-          return uploadBytes(
+          return await uploadBytes(
             bytes: fileBytes,
             fileName: name,
             mediaType: mediaType,

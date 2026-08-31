@@ -38,7 +38,6 @@ jobs:
           # Create placeholder firebase_options.dart if not present (since ignored in git)
           if [ ! -f "lib/firebase_options.dart" ]; then
             cat << 'EOF' > lib/firebase_options.dart
-          import 'package:flutter/foundation.dart';
           import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 
           class DefaultFirebaseOptions {
@@ -61,19 +60,18 @@ jobs:
             static final FCMV1Service instance = FCMV1Service._internal();
             FCMV1Service._internal();
 
-            Future<bool> sendV1PushNotification({
+            Future<void> sendV1PushNotification({
               required String targetToken,
               required String senderName,
-              String? senderImage,
+              required String senderImage,
               required String messageText,
               required String chatRoomId,
               required String receiverId,
               required String senderId,
               String? mediaType,
               String? mediaUrl,
-            }) async {
-              return true;
-            }
+              bool isGroup = false,
+            }) async {}
           }
           EOF
           fi
@@ -93,3 +91,4 @@ jobs:
         with:
           name: code-coverage-report
           path: coverage/lcov.info
+          if-no-files-found: ignore
